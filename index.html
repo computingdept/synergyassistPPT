@@ -313,11 +313,11 @@
       <div class="top-form">
         <div>
           <label for="lessonTitle">Lesson title</label>
-          <input id="lessonTitle" value="Tsar vs King" oninput="syncOutputFileNameFromTitle()" />
+          <input id="lessonTitle" placeholder="Auto-filled when lesson is populated" oninput="syncOutputFileNameFromTitle()" />
         </div>
         <div>
           <label for="outputFileName">PowerPoint file name</label>
-          <input id="outputFileName" value="Tsar vs King.pptx" oninput="markOutputFileNameEdited()" />
+          <input id="outputFileName" placeholder="Auto-filled from lesson title" oninput="markOutputFileNameEdited()" />
         </div>
         <div class="action-row">
           <button onclick="populateFromSALesson()">Populate</button>
@@ -328,86 +328,12 @@
 
     <section class="card paste-card">
       <h2>2. Paste Synergy Assist lesson</h2>
-      <textarea id="saLessonText">Do Now
-Yes/No: A Tsar and a King are exactly the same thing.
-MCQ: Which title is most closely linked with Russia?
-a) Pharaoh
-b) Tsar
-c) Emperor of Japan
-d) Duke
-Short answer: What does a monarch usually do?
-Challenge: Why might different countries use different royal titles?
-
-Do Now Review
-Q1: Are a Tsar and a King exactly the same thing? Answer: No — they are similar because both can be monarchs, but Tsar has a specific Russian and imperial background.
-Q2: Which title is most closely linked with Russia? Answer: Tsar.
-Q3: What does a monarch usually do? Answer: A monarch is a ruler, such as a king, queen, emperor or tsar.
-Q4: Why might countries use different royal titles? Answer: Because of history, language, religion, empire and tradition.
-
-Key Terms
-Monarch: A ruler who usually inherits power through a royal family.
-King: A male monarch, often ruling a kingdom.
-Tsar: A title used by Russian rulers, linked to the idea of emperor.
-Empire: A group of lands or peoples ruled by one powerful leader or state.
-Autocracy: A system where one ruler has very strong personal power.
-Caesar: Roman title that helped inspire the word Tsar.
-
-Presentation
-For this comparison lesson, make your thinking easy to follow with a clear title, neat columns and labelled points.
-Use the presentation standard shown in the image.
-Cross out mistakes with one neat line and keep your page clear.
-
-Objectives
-Explain what a King is.
-Explain what a Tsar is.
-Compare the two titles using historical context.
-Decide whether “Tsar = King” is accurate, partly accurate, or misleading.
-
-I Do
-Teacher model:
-A King is usually the ruler of a kingdom.
-A Tsar was a Russian ruler whose title comes from Caesar and carried an imperial meaning.
-So, a Tsar can be like a King because both are monarchs, but Tsar suggests a particular Russian imperial tradition and often stronger autocratic power.
-Best short explanation: A Tsar is a type of monarch, but not simply the same as a King.
-
-We Do
-Together, sort these into Similarity or Difference:
-Both can inherit power.
-King is linked to a kingdom.
-Tsar is strongly linked to Russia.
-Both may rule through a royal family.
-Tsar has links to Caesar and imperial authority.
-A King may have limited power in a constitutional monarchy.
-
-You Do
-Write a short answer:
-“Explain one similarity and one difference between a Tsar and a King.” (4 marks)
-Use the words monarch, kingdom and Russia if you can.
-
-Check Your Work
-Similarity: Both a Tsar and a King can be hereditary monarchs.
-Difference: A King usually rules a kingdom, while Tsar was a Russian imperial title linked to Caesar.
-Strong answer: “They are similar because both are monarchs, but different because Tsar has a specific Russian imperial meaning rather than being a general word for a king.”
-Common error: Saying “Tsar is just Russian for King” without explaining the imperial context.
-
-Exam Question
-Explain why calling a Tsar “just a King” might be misleading. (5 marks)
-
-Improve Your Answer
-Basic answer: “A Tsar is a Russian King.”
-Better answer: “A Tsar was a Russian monarch, but the title came from Caesar and suggested imperial authority. A King usually rules a kingdom, while a Tsar was linked to the Russian Empire and autocratic power. So the two titles are similar, but not identical.”
-Best improvement: Use because, whereas and however.
-
-Exit Ticket
-One sentence:
-What is the key difference between a Tsar and a King?
-
-Final Check
-A Tsar and a King are both monarchs, but Tsar is a specific Russian imperial title linked to Caesar and autocratic rule. So they are related ideas, not perfect synonyms. Also, your headteacher was basically right — annoyingly.</textarea>
+      <textarea id="saLessonText" placeholder="Paste your Synergy Assist lesson here. Use Example Lesson to try the builder."></textarea>
       <div class="paste-actions">
         <p class="help">Expected headings: Do Now, Do Now Review, Key Terms, Presentation, Objectives, I Do, We Do, You Do, Check Your Work, Exam Question, Improve Your Answer, Exit Ticket, Final Check.</p>
         <div class="action-row">
           <button onclick="populateFromSALesson()">Populate Sections</button>
+          <button class="secondary" onclick="loadExampleLesson()">Example Lesson</button>
           <button class="secondary" onclick="clearSALessonPane()">Clear Paste</button>
         </div>
       </div>
@@ -717,6 +643,67 @@ Use 'I can...' statements carefully. Ask pupils to identify one thing they under
       });
     }
 
+
+
+    function toTitleCase(text) {
+      return text
+        .toLowerCase()
+        .split(" ")
+        .filter(Boolean)
+        .map(function (word) {
+          if (["and", "or", "the", "a", "an", "of", "to", "in", "for", "with"].includes(word)) return word;
+          return word.charAt(0).toUpperCase() + word.slice(1);
+        })
+        .join(" ")
+        .replace(/^\w/, function (c) { return c.toUpperCase(); });
+    }
+
+    function cleanGuessedTitle(text) {
+      return text
+        .replace(/^[-•*\d\.\)\s]+/, "")
+        .replace(/^Lesson title[:\-]\s*/i, "")
+        .replace(/^Title[:\-]\s*/i, "")
+        .replace(/^(Explain|Describe|Compare|Evaluate|Convert|Apply|Design|Trace|Justify|Identify|Calculate|Use|Create|Understand|Know)\s+/i, "")
+        .replace(/^how\s+to\s+/i, "")
+        .replace(/^how\s+/i, "")
+        .replace(/\bworks\b\.?$/i, "")
+        .replace(/[.!?]+$/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function guessLessonTitleFromText(rawText, parsed) {
+      const lines = rawText
+        .replace(/\r\n/g, "\n")
+        .split("\n")
+        .map(function (line) { return line.trim(); })
+        .filter(Boolean);
+
+      for (let i = 0; i < lines.length; i++) {
+        const titleMatch = lines[i].match(/^(Lesson title|Title)\s*[:\-]\s*(.+)$/i);
+        if (titleMatch && titleMatch[2].trim()) return cleanGuessedTitle(titleMatch[2]);
+      }
+
+      const headingNames = SECTIONS.map(function (section) { return normaliseHeading(section.title); });
+      for (let i = 0; i < lines.length; i++) {
+        const clean = normaliseHeading(lines[i]);
+        if (headingNames.includes(clean)) break;
+        if (!lines[i].startsWith("Slides:") && clean.length > 3 && clean.length < 80) {
+          return cleanGuessedTitle(lines[i]);
+        }
+      }
+
+      if (parsed && parsed.objectives) {
+        const objectiveLine = parsed.objectives
+          .split("\n")
+          .map(function (line) { return cleanGuessedTitle(line); })
+          .find(function (line) { return line.length >= 4 && line.length <= 60; });
+        if (objectiveLine) return toTitleCase(objectiveLine);
+      }
+
+      return "Synergy Assist Lesson";
+    }
+
     function populateFromSALesson() {
       log("Populate boxes from SA lesson clicked.");
       const raw = document.getElementById("saLessonText").value;
@@ -727,6 +714,12 @@ Use 'I can...' statements carefully. Ask pupils to identify one thing they under
       }
 
       const parsed = parseSALessonText(raw);
+      const titleBox = document.getElementById("lessonTitle");
+      if (!titleBox.value.trim()) {
+        titleBox.value = guessLessonTitleFromText(raw, parsed);
+        syncOutputFileNameFromTitle();
+      }
+
       let populated = 0;
       const missing = [];
 
@@ -748,6 +741,12 @@ Use 'I can...' statements carefully. Ask pupils to identify one thing they under
       } else {
         alert("All lesson boxes populated.");
       }
+    }
+
+
+    function loadExampleLesson() {
+      document.getElementById("saLessonText").value = "Do Now\nYes/No: A Tsar and a King are exactly the same thing.\nMCQ: Which title is most closely linked with Russia?\na) Pharaoh\nb) Tsar\nc) Emperor of Japan\nd) Duke\nShort answer: What does a monarch usually do?\nChallenge: Why might different countries use different royal titles?\n\nDo Now Review\nQ1: Are a Tsar and a King exactly the same thing? Answer: No — they are similar because both can be monarchs, but Tsar has a specific Russian and imperial background.\nQ2: Which title is most closely linked with Russia? Answer: Tsar.\nQ3: What does a monarch usually do? Answer: A monarch is a ruler, such as a king, queen, emperor or tsar.\nQ4: Why might countries use different royal titles? Answer: Because of history, language, religion, empire and tradition.\n\nKey Terms\nMonarch: A ruler who usually inherits power through a royal family.\nKing: A male monarch, often ruling a kingdom.\nTsar: A title used by Russian rulers, linked to the idea of emperor.\nEmpire: A group of lands or peoples ruled by one powerful leader or state.\nAutocracy: A system where one ruler has very strong personal power.\nCaesar: Roman title that helped inspire the word Tsar.\n\nPresentation\nFor this comparison lesson, make your thinking easy to follow with a clear title, neat columns and labelled points.\nUse the presentation standard shown in the image.\nCross out mistakes with one neat line and keep your page clear.\n\nObjectives\nExplain what a King is.\nExplain what a Tsar is.\nCompare the two titles using historical context.\nDecide whether “Tsar = King” is accurate, partly accurate, or misleading.\n\nI Do\nTeacher model:\nA King is usually the ruler of a kingdom.\nA Tsar was a Russian ruler whose title comes from Caesar and carried an imperial meaning.\nSo, a Tsar can be like a King because both are monarchs, but Tsar suggests a particular Russian imperial tradition and often stronger autocratic power.\nBest short explanation: A Tsar is a type of monarch, but not simply the same as a King.\n\nWe Do\nTogether, sort these into Similarity or Difference:\nBoth can inherit power.\nKing is linked to a kingdom.\nTsar is strongly linked to Russia.\nBoth may rule through a royal family.\nTsar has links to Caesar and imperial authority.\nA King may have limited power in a constitutional monarchy.\n\nYou Do\nWrite a short answer:\n“Explain one similarity and one difference between a Tsar and a King.” (4 marks)\nUse the words monarch, kingdom and Russia if you can.\n\nCheck Your Work\nSimilarity: Both a Tsar and a King can be hereditary monarchs.\nDifference: A King usually rules a kingdom, while Tsar was a Russian imperial title linked to Caesar.\nStrong answer: “They are similar because both are monarchs, but different because Tsar has a specific Russian imperial meaning rather than being a general word for a king.”\nCommon error: Saying “Tsar is just Russian for King” without explaining the imperial context.\n\nExam Question\nExplain why calling a Tsar “just a King” might be misleading. (5 marks)\n\nImprove Your Answer\nBasic answer: “A Tsar is a Russian King.”\nBetter answer: “A Tsar was a Russian monarch, but the title came from Caesar and suggested imperial authority. A King usually rules a kingdom, while a Tsar was linked to the Russian Empire and autocratic power. So the two titles are similar, but not identical.”\nBest improvement: Use because, whereas and however.\n\nExit Ticket\nOne sentence:\nWhat is the key difference between a Tsar and a King?\n\nFinal Check\nA Tsar and a King are both monarchs, but Tsar is a specific Russian imperial title linked to Caesar and autocratic rule. So they are related ideas, not perfect synonyms. Also, your headteacher was basically right — annoyingly.";
+      log("Example lesson loaded.");
     }
 
     function clearSALessonPane() {
@@ -2575,12 +2574,12 @@ Use 'I can...' statements carefully. Ask pupils to identify one thing they under
     }
 
     function syncOutputFileNameFromTitle() {
-      const lessonTitle = document.getElementById("lessonTitle").value.trim() || "Synergy Assist Lesson";
+      const lessonTitle = document.getElementById("lessonTitle").value.trim();
       const outputBox = document.getElementById("outputFileName");
 
       // Only auto-update if the user has not manually changed the file name.
       if (!outputBox.dataset.userEdited || outputBox.dataset.userEdited === "false") {
-        outputBox.value = safeFileName(lessonTitle) + ".pptx";
+        outputBox.value = lessonTitle ? safeFileName(lessonTitle) + ".pptx" : "";
       }
     }
 

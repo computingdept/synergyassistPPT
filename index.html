@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Synergy Assist PowerPoint Lesson Builder v67</title>
+  <title>Synergy Assist PowerPoint Lesson Builder</title>
 
   <style>
     :root {
@@ -1310,8 +1310,10 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
         return;
       }
 
-      // Do Now Review layout:
-      // same 2 x 2 card format as Do Now, but answers are shown in green.
+      // PowerPoint export fix:
+      // The HTML preview can wrap text naturally, but PPTX text boxes need more
+      // vertical space. Use one larger rich-text area per review card so the
+      // question and answer are not clipped or dropped in the generated deck.
       const visibleItems = items.slice(0, 4);
       const extraCount = Math.max(0, items.length - visibleItems.length);
 
@@ -1328,7 +1330,8 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
         const x = startX + col * (cardW + colGap);
         const y = startY + row * (cardH + rowGap);
 
-        const compact = (item.question + item.answer).length > 170;
+        const totalLength = (item.question + " " + item.answer).length;
+        const fontSize = totalLength > 230 ? 9.3 : totalLength > 170 ? 10.2 : 11.2;
 
         slide.addShape("roundRect", {
           x: x,
@@ -1364,38 +1367,55 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
           margin: 0
         });
 
-        slide.addText(item.question, {
-          x: x + 0.24,
-          y: y + 0.58,
-          w: cardW - 0.48,
-          h: 0.47,
-          fontFace: themeFont(),
-          fontSize: compact ? 10.4 : 12.4,
-          bold: true,
-          color: themeColor("1F2933"),
-          fit: "shrink",
-          valign: "top",
-          margin: 0.03,
-          breakLine: true
+        const rich = [];
+        rich.push({
+          text: item.question || ("Q" + (index + 1)),
+          options: {
+            bold: true,
+            color: themeColor("1F2933"),
+            breakLine: true
+          }
         });
 
         if (item.answer) {
-          slide.addText("Answer: " + item.answer, {
-            x: x + 0.24,
-            y: y + 1.08,
-            w: cardW - 0.48,
-            h: 0.62,
-            fontFace: themeFont(),
-            fontSize: compact ? 10.4 : 12.4,
-            bold: true,
-            color: themeColor("24814F"),
-            fit: "shrink",
-            valign: "top",
-            margin: 0.03,
-            breakLine: true
+          rich.push({
+            text: "Answer: " + item.answer,
+            options: {
+              bold: true,
+              color: themeColor("24814F"),
+              breakLine: true
+            }
           });
         }
+
+        slide.addText(rich, {
+          x: x + 0.24,
+          y: y + 0.62,
+          w: cardW - 0.48,
+          h: cardH - 0.78,
+          fontFace: themeFont(),
+          fontSize: fontSize,
+          fit: "shrink",
+          valign: "top",
+          margin: 0.03,
+          breakLine: true,
+          paraSpaceAfterPt: 4
+        });
       });
+
+      if (extraCount > 0) {
+        slide.addText("+" + extraCount + " more review note" + (extraCount === 1 ? "" : "s") + " in speaker notes", {
+          x: 9.55,
+          y: 5.82,
+          w: 2.95,
+          h: 0.22,
+          fontFace: themeFont(),
+          fontSize: 8.5,
+          color: themeColor("667085"),
+          align: "right",
+          margin: 0
+        });
+      }
     }
 
 

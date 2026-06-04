@@ -1177,6 +1177,30 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
       return items;
     }
 
+    function splitMcqText(text) {
+      const clean = String(text || "").replace(/\r/g, "").trim();
+      const optionRegex = /[a-d]\)\s*/ig;
+      const matches = [];
+      let match;
+
+      while ((match = optionRegex.exec(clean)) !== null) {
+        matches.push({ index: match.index, label: match[0] });
+      }
+
+      if (matches.length < 2) {
+        return { question: clean, options: [] };
+      }
+
+      const question = clean.slice(0, matches[0].index).trim();
+      const options = matches.map(function (m, i) {
+        const start = m.index;
+        const end = i + 1 < matches.length ? matches[i + 1].index : clean.length;
+        return clean.slice(start, end).replace(/\s+/g, " ").trim();
+      });
+
+      return { question: question, options: options };
+    }
+
     function addDoNowCards(slide, lines) {
       const items = buildDoNowItems(lines);
 
@@ -1186,33 +1210,30 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
           y: 2.4,
           w: 10.8,
           h: 0.5,
-          fontFace: themeFont(),
+          fontFace: "Arial",
           fontSize: 20,
           color: themeColor("1F2933")
         });
         return;
       }
 
-      // Do Now layout:
-      // 2 x 2 grid for the first four retrieval items.
-      // This gives MCQs enough room and stops question text bleeding into nearby cards.
+      // 2 x 2 grid. Text is deliberately larger for classroom display.
       const visibleItems = items.slice(0, 4);
       const extraCount = Math.max(0, items.length - visibleItems.length);
 
       const startX = 0.65;
-      const startY = 1.02;
+      const startY = 1.00;
       const colGap = 0.26;
-      const rowGap = 0.20;
+      const rowGap = 0.18;
       const cardW = 5.95;
-      const cardH = 2.22;
+      const cardH = 2.28;
 
       visibleItems.forEach(function (item, index) {
         const col = index % 2;
         const row = Math.floor(index / 2);
         const x = startX + col * (cardW + colGap);
         const y = startY + row * (cardH + rowGap);
-
-        const compact = item.text.length > 150;
+        const isMcq = String(item.type || "").toLowerCase().includes("mcq") || String(item.type || "").toLowerCase().includes("multiple choice");
 
         slide.addShape("roundRect", {
           x: x,
@@ -1239,8 +1260,8 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
           y: y + 0.215,
           w: 1.43,
           h: 0.18,
-          fontFace: themeFont(),
-          fontSize: 12.8,
+          fontFace: "Arial",
+          fontSize: 13.5,
           bold: true,
           color: themeColor("24814F"),
           fit: "shrink",
@@ -1248,20 +1269,79 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
           margin: 0
         });
 
-        slide.addText(item.text, {
-          x: x + 0.25,
-          y: y + 0.65,
-          w: cardW - 0.50,
-          h: cardH - 0.82,
-          fontFace: themeFont(),
-          fontSize: compact ? 16.2 : 18.5,
-          color: themeColor("1F2933"),
-          fit: "shrink",
-          valign: "top",
-          margin: 0.03,
-          breakLine: true
-        });
+        if (isMcq) {
+          const mcq = splitMcqText(item.text);
+          const question = mcq.question || item.text;
+
+          slide.addText(question, {
+            x: x + 0.25,
+            y: y + 0.62,
+            w: cardW - 0.50,
+            h: 0.72,
+            fontFace: "Arial",
+            fontSize: 20,
+            color: themeColor("1F2933"),
+            fit: "shrink",
+            valign: "top",
+            margin: 0.02,
+            breakLine: true
+          });
+
+          const optionLines = mcq.options.slice(0, 4);
+          if (optionLines.length > 0) {
+            const optionTopY = y + 1.42;
+            const optionColW = 2.70;
+            const optionRowH = 0.40;
+            const optionGapX = 0.30;
+            const optionGapY = 0.08;
+
+            optionLines.forEach(function (option, optionIndex) {
+              const optionCol = optionIndex % 2;
+              const optionRow = Math.floor(optionIndex / 2);
+              slide.addText(option, {
+                x: x + 0.25 + optionCol * (optionColW + optionGapX),
+                y: optionTopY + optionRow * (optionRowH + optionGapY),
+                w: optionColW,
+                h: optionRowH,
+                fontFace: "Arial",
+                fontSize: 20,
+                color: themeColor("1F2933"),
+                fit: "shrink",
+                valign: "mid",
+                margin: 0
+              });
+            });
+          }
+        } else {
+          slide.addText(item.text, {
+            x: x + 0.25,
+            y: y + 0.65,
+            w: cardW - 0.50,
+            h: cardH - 0.82,
+            fontFace: "Arial",
+            fontSize: 20,
+            color: themeColor("1F2933"),
+            fit: "shrink",
+            valign: "top",
+            margin: 0.03,
+            breakLine: true
+          });
+        }
       });
+
+      if (extraCount > 0) {
+        slide.addText("+" + extraCount + " more Do Now item" + (extraCount === 1 ? "" : "s") + " in speaker notes", {
+          x: 9.55,
+          y: 5.90,
+          w: 2.95,
+          h: 0.22,
+          fontFace: "Arial",
+          fontSize: 8.5,
+          color: themeColor("667085"),
+          align: "right",
+          margin: 0
+        });
+      }
     }
 
 
@@ -1303,35 +1383,28 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
           y: 2.4,
           w: 10.8,
           h: 0.5,
-          fontFace: themeFont(),
+          fontFace: "Arial",
           fontSize: 20,
           color: themeColor("1F2933")
         });
         return;
       }
 
-      // PowerPoint export fix:
-      // The HTML preview can wrap text naturally, but PPTX text boxes need more
-      // vertical space. Use one larger rich-text area per review card so the
-      // question and answer are not clipped or dropped in the generated deck.
       const visibleItems = items.slice(0, 4);
       const extraCount = Math.max(0, items.length - visibleItems.length);
 
       const startX = 0.65;
-      const startY = 1.02;
+      const startY = 1.00;
       const colGap = 0.26;
-      const rowGap = 0.20;
+      const rowGap = 0.18;
       const cardW = 5.95;
-      const cardH = 2.22;
+      const cardH = 2.28;
 
       visibleItems.forEach(function (item, index) {
         const col = index % 2;
         const row = Math.floor(index / 2);
         const x = startX + col * (cardW + colGap);
         const y = startY + row * (cardH + rowGap);
-
-        const totalLength = (item.question + " " + item.answer).length;
-        const fontSize = totalLength > 230 ? 13.2 : totalLength > 170 ? 14.6 : 16.2;
 
         slide.addShape("roundRect", {
           x: x,
@@ -1358,8 +1431,8 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
           y: y + 0.215,
           w: 1.43,
           h: 0.18,
-          fontFace: themeFont(),
-          fontSize: 12.8,
+          fontFace: "Arial",
+          fontSize: 13.5,
           bold: true,
           color: themeColor("24814F"),
           fit: "shrink",
@@ -1393,23 +1466,23 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
           y: y + 0.65,
           w: cardW - 0.50,
           h: cardH - 0.82,
-          fontFace: themeFont(),
-          fontSize: fontSize,
+          fontFace: "Arial",
+          fontSize: 20,
           fit: "shrink",
           valign: "top",
           margin: 0.03,
           breakLine: true,
-          paraSpaceAfterPt: 4
+          paraSpaceAfterPt: 5
         });
       });
 
       if (extraCount > 0) {
         slide.addText("+" + extraCount + " more review note" + (extraCount === 1 ? "" : "s") + " in speaker notes", {
           x: 9.55,
-          y: 5.82,
+          y: 5.90,
           w: 2.95,
           h: 0.22,
-          fontFace: themeFont(),
+          fontFace: "Arial",
           fontSize: 8.5,
           color: themeColor("667085"),
           align: "right",
@@ -2760,11 +2833,12 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
     function addCompactSlideHeader(slide, sectionTitle, lessonTitle) {
       const parts = splitLessonTitleForHeader(lessonTitle);
       const headerText = sectionTitle + " — " + parts.main;
+      const hasSpec = !!parts.spec;
 
       slide.addText(headerText, {
         x: 0.45,
         y: 0.60,
-        w: 12.35,
+        w: hasSpec ? 8.95 : 12.35,
         h: 0.38,
         fontFace: themeFont(),
         fontSize: 18,
@@ -2772,21 +2846,24 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
         bold: true,
         fit: "shrink",
         margin: 0,
-        breakLine: false
+        breakLine: false,
+        align: "left"
       });
 
-      if (parts.spec) {
+      if (hasSpec) {
         slide.addText(parts.spec, {
-          x: 0.45,
-          y: 0.95,
-          w: 12.35,
-          h: 0.16,
+          x: 9.45,
+          y: 0.66,
+          w: 3.35,
+          h: 0.18,
           fontFace: themeFont(),
           fontSize: 8.5,
           color: themeColor("667085"),
           bold: true,
           fit: "shrink",
-          margin: 0
+          margin: 0,
+          align: "right",
+          valign: "mid"
         });
       }
     }

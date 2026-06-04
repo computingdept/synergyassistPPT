@@ -1199,12 +1199,12 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
       const visibleItems = items.slice(0, 4);
       const extraCount = Math.max(0, items.length - visibleItems.length);
 
-      const startX = 0.8;
-      const startY = 1.15;
-      const colGap = 0.28;
-      const rowGap = 0.22;
-      const cardW = 5.7;
-      const cardH = 2.05;
+      const startX = 0.65;
+      const startY = 1.02;
+      const colGap = 0.26;
+      const rowGap = 0.20;
+      const cardW = 5.95;
+      const cardH = 2.22;
 
       visibleItems.forEach(function (item, index) {
         const col = index % 2;
@@ -1226,9 +1226,9 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
 
         slide.addShape("roundRect", {
           x: x + 0.18,
-          y: y + 0.16,
-          w: 1.35,
-          h: 0.33,
+          y: y + 0.14,
+          w: 1.55,
+          h: 0.40,
           rectRadius: 0.09,
           fill: { color: themeColor("E8F5EE") },
           line: { color: themeColor("CFE5D8"), width: 0.5 }
@@ -1236,11 +1236,11 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
 
         slide.addText(item.type, {
           x: x + 0.24,
-          y: y + 0.22,
-          w: 1.23,
-          h: 0.16,
+          y: y + 0.215,
+          w: 1.43,
+          h: 0.18,
           fontFace: themeFont(),
-          fontSize: 11,
+          fontSize: 12.8,
           bold: true,
           color: themeColor("24814F"),
           fit: "shrink",
@@ -1249,12 +1249,12 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
         });
 
         slide.addText(item.text, {
-          x: x + 0.24,
-          y: y + 0.62,
-          w: cardW - 0.48,
-          h: cardH - 0.78,
+          x: x + 0.25,
+          y: y + 0.65,
+          w: cardW - 0.50,
+          h: cardH - 0.82,
           fontFace: themeFont(),
-          fontSize: compact ? 11.2 : 13.5,
+          fontSize: compact ? 16.2 : 18.5,
           color: themeColor("1F2933"),
           fit: "shrink",
           valign: "top",
@@ -1317,12 +1317,12 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
       const visibleItems = items.slice(0, 4);
       const extraCount = Math.max(0, items.length - visibleItems.length);
 
-      const startX = 0.8;
-      const startY = 1.15;
-      const colGap = 0.28;
-      const rowGap = 0.22;
-      const cardW = 5.7;
-      const cardH = 2.05;
+      const startX = 0.65;
+      const startY = 1.02;
+      const colGap = 0.26;
+      const rowGap = 0.20;
+      const cardW = 5.95;
+      const cardH = 2.22;
 
       visibleItems.forEach(function (item, index) {
         const col = index % 2;
@@ -1331,7 +1331,7 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
         const y = startY + row * (cardH + rowGap);
 
         const totalLength = (item.question + " " + item.answer).length;
-        const fontSize = totalLength > 230 ? 9.3 : totalLength > 170 ? 10.2 : 11.2;
+        const fontSize = totalLength > 230 ? 13.2 : totalLength > 170 ? 14.6 : 16.2;
 
         slide.addShape("roundRect", {
           x: x,
@@ -1345,9 +1345,9 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
 
         slide.addShape("roundRect", {
           x: x + 0.18,
-          y: y + 0.16,
-          w: 1.35,
-          h: 0.33,
+          y: y + 0.14,
+          w: 1.55,
+          h: 0.40,
           rectRadius: 0.09,
           fill: { color: themeColor("E8F5EE") },
           line: { color: themeColor("CFE5D8"), width: 0.5 }
@@ -1355,11 +1355,11 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
 
         slide.addText("Review", {
           x: x + 0.24,
-          y: y + 0.22,
-          w: 1.23,
-          h: 0.16,
+          y: y + 0.215,
+          w: 1.43,
+          h: 0.18,
           fontFace: themeFont(),
-          fontSize: 11,
+          fontSize: 12.8,
           bold: true,
           color: themeColor("24814F"),
           fit: "shrink",
@@ -1389,10 +1389,10 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
         }
 
         slide.addText(rich, {
-          x: x + 0.24,
-          y: y + 0.62,
-          w: cardW - 0.48,
-          h: cardH - 0.78,
+          x: x + 0.25,
+          y: y + 0.65,
+          w: cardW - 0.50,
+          h: cardH - 0.82,
           fontFace: themeFont(),
           fontSize: fontSize,
           fit: "shrink",

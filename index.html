@@ -378,6 +378,15 @@
       <div id="reviewGrid" class="review-grid"></div>
     </section>
 
+
+    <section class="card">
+      <h2>Student webpage (work in progress)</h2>
+      <p class="help" style="margin-bottom:10px;">Creates a student-facing catch-up webpage. Pupils read from the page and complete the work on paper.</p>
+      <div class="action-row">
+        <button class="secondary" onclick="createStudentFacingWebpage()">Student Facing Webpage</button>
+      </div>
+    </section>
+
     <details class="card">
       <summary>Advanced / Debug</summary>
       <p class="help" style="margin-top:10px;">Use this only if something fails.</p>
@@ -578,7 +587,7 @@
 
     function getRhscBadgeWidth(label) {
       const text = String(label || "");
-      return Math.max(0.72, Math.min(1.65, 0.40 + (text.length * 0.050)));
+      return Math.max(0.68, Math.min(1.48, 0.36 + (text.length * 0.046)));
     }
 
     function splitRhscBadgesIntoRows(badges, maxRowWidth, gap) {
@@ -618,12 +627,14 @@
       const coding = getRhscCodingForSection(sectionTitle);
       if (!coding) return;
 
+      // Keep classroom routine badges in a compact header space.
+      // This prevents the two You Do routine rows from overlapping the lesson content area.
       const gap = 0.055;
-      const maxRowWidth = 6.05;
-      const rightEdge = 12.72;
-      const startY = 0.44;
-      const rowGap = 0.285;
-      const h = 0.24;
+      const maxRowWidth = 5.85;
+      const rightEdge = 12.58;
+      const startY = sectionTitle === "You Do" ? 0.54 : 0.58;
+      const rowGap = sectionTitle === "You Do" ? 0.255 : 0.30;
+      const h = sectionTitle === "You Do" ? 0.225 : 0.255;
       const rows = splitRhscBadgesIntoRows(coding, maxRowWidth, gap);
 
       rows.forEach(function (row, rowIndex) {
@@ -640,17 +651,17 @@
             y: y,
             w: badge.w,
             h: h,
-            rectRadius: 0.055,
+            rectRadius: 0.07,
             fill: { color: style.fill, transparency: 5 },
             line: { color: style.line, width: 0.45, transparency: 15 }
           });
           slide.addText(badge.text, {
             x: x + 0.045,
-            y: y + 0.045,
+            y: y + (sectionTitle === "You Do" ? 0.043 : 0.050),
             w: badge.w - 0.09,
-            h: 0.13,
+            h: sectionTitle === "You Do" ? 0.12 : 0.14,
             fontFace: themeFont(),
-            fontSize: 7.2,
+            fontSize: sectionTitle === "You Do" ? 6.7 : 7.4,
             bold: true,
             color: "17202A",
             align: "center",
@@ -661,6 +672,12 @@
           x += badge.w + gap;
         });
       });
+    }
+
+
+    function addYouDoChoiceGuidance(slide) {
+      // Guidance is intentionally kept in presenter notes only.
+      // Do not add a visible teacher-edit banner to the slide.
     }
 
     const LIBRARY_URLS = [
@@ -736,6 +753,9 @@ Use prompts, paired rehearsal, worked steps, checklists or sentence stems where 
 
       "You Do": `Teaching notes:
 Pupils now practise independently. The generated You Do slide uses an independent task card and a short self-check card so pupils know what quality work should include. Circulate, check work early and respond to misconceptions while pupils are still practising.
+
+Routine choice:
+The You Do slide may show two possible routine rows: Silent working / Independent practice and Quiet working / Think-Pair-Share / Turn & Talk. Before using the slide, choose the row that matches the task and delete the other row so pupils see one clear routine.
 
 Adaptive teaching prompts:
 Provide optional scaffolds rather than separate lower-expectation work. Examples include key words, first-step prompts, success criteria or partially completed answers. Remove support where pupils can work independently.`,
@@ -1827,7 +1847,7 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
     }
 
     function addKeyTermsYellowBox(slide, lines) {
-      const hmgTodayKeyVocabChallenge = "Choose the word you think will be most important today and explain why.";
+      const hmgTodayKeyVocabChallenge = "Pick one keyword and be ready to use it correctly in a sentence.";
       const items = buildKeyTermItems(lines).slice(0, 6);
 
       if (isHMGTodayMode()) {
@@ -1871,7 +1891,7 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
           margin: 0
         });
 
-        slide.addText("Challenge", {
+        slide.addText("Use it in context", {
           x: rightX + 0.25,
           y: topY + 0.30,
           w: rightW - 0.50,
@@ -2399,31 +2419,45 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
 
         slide.addShape("roundRect", {
           x: 0.75,
-          y: 1.12,
+          y: 1.06,
           w: 11.85,
-          h: 4.7,
+          h: 5.08,
           rectRadius: 0.14,
           fill: { color: themeColor("F8FCFA") },
           line: { color: themeColor("CFE5D8"), width: 1.1 }
         });
 
-        slide.addText("Teacher modelling guide", {
+        slide.addText("Teacher guidance ideas", {
           x: 1.05,
-          y: 1.35,
-          w: 11.1,
-          h: 0.30,
+          y: 1.24,
+          w: 5.2,
+          h: 0.24,
           fontFace: themeFont(),
-          fontSize: 20,
+          fontSize: 15.5,
           bold: true,
           color: themeColor("24583E"),
           margin: 0
         });
 
+        slide.addText("Edit these prompts before delivery — they are a planning aid, not student-facing instructions.", {
+          x: 6.00,
+          y: 1.25,
+          w: 5.95,
+          h: 0.20,
+          fontFace: themeFont(),
+          fontSize: 8.8,
+          italic: true,
+          color: themeColor("667085"),
+          align: "right",
+          margin: 0,
+          fit: "shrink"
+        });
+
         const panels = [
-          { label: "Model", text: model, x: 1.05, y: 1.85, w: 5.65, h: 1.35 },
-          { label: "Think aloud", text: thinkAloud || "Explain the thinking behind each decision.", x: 6.95, y: 1.85, w: 4.95, h: 1.35 },
-          { label: "Watch for", text: watchFor, x: 1.05, y: 3.45, w: 5.65, h: 1.35 },
-          { label: "Quick check", text: quickCheck, x: 6.95, y: 3.45, w: 4.95, h: 1.35 }
+          { label: "Model", text: model, x: 1.05, y: 1.68, w: 5.70, h: 1.68 },
+          { label: "Think aloud", text: thinkAloud || "Explain the thinking behind each decision.", x: 6.90, y: 1.68, w: 5.05, h: 1.68 },
+          { label: "Watch for", text: watchFor, x: 1.05, y: 3.62, w: 5.70, h: 1.68 },
+          { label: "Quick check", text: quickCheck, x: 6.90, y: 3.62, w: 5.05, h: 1.68 }
         ];
 
         panels.forEach(function (panel) {
@@ -2463,11 +2497,11 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
 
           slide.addText(panel.text, {
             x: panel.x + 0.25,
-            y: panel.y + 0.62,
+            y: panel.y + 0.56,
             w: panel.w - 0.50,
-            h: panel.h - 0.75,
+            h: panel.h - 0.64,
             fontFace: themeFont(),
-            fontSize: 14.6,
+            fontSize: 12.4,
             color: themeColor("1F2933"),
             fit: "shrink",
             valign: "top",
@@ -2566,31 +2600,45 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
 
         slide.addShape("roundRect", {
           x: 0.75,
-          y: 1.12,
+          y: 1.06,
           w: 11.85,
-          h: 4.7,
+          h: 5.08,
           rectRadius: 0.14,
           fill: { color: themeColor("F8FCFA") },
           line: { color: themeColor("CFE5D8"), width: 1.1 }
         });
 
-        slide.addText("Guided practice frame", {
+        slide.addText("Teacher guidance ideas", {
           x: 1.05,
-          y: 1.35,
-          w: 11.1,
-          h: 0.30,
+          y: 1.24,
+          w: 5.2,
+          h: 0.24,
           fontFace: themeFont(),
-          fontSize: 20,
+          fontSize: 15.5,
           bold: true,
           color: themeColor("24583E"),
           margin: 0
         });
 
+        slide.addText("Edit these prompts before delivery — they are a planning aid, not student-facing instructions.", {
+          x: 6.00,
+          y: 1.25,
+          w: 5.95,
+          h: 0.20,
+          fontFace: themeFont(),
+          fontSize: 8.8,
+          italic: true,
+          color: themeColor("667085"),
+          align: "right",
+          margin: 0,
+          fit: "shrink"
+        });
+
         const panels = [
-          { label: "Together", text: focus, x: 1.05, y: 1.85, w: 5.65, h: 1.35 },
-          { label: "Teacher prompts", text: teacherPrompts || "Ask pupils what the next step should be.", x: 6.95, y: 1.85, w: 4.95, h: 1.35 },
-          { label: "Support", text: support, x: 1.05, y: 3.45, w: 5.65, h: 1.35 },
-          { label: "Check", text: check, x: 6.95, y: 3.45, w: 4.95, h: 1.35 }
+          { label: "Together", text: focus, x: 1.05, y: 1.68, w: 5.70, h: 1.68 },
+          { label: "Teacher prompts", text: teacherPrompts || "Ask pupils what the next step should be.", x: 6.90, y: 1.68, w: 5.05, h: 1.68 },
+          { label: "Support", text: support, x: 1.05, y: 3.62, w: 5.70, h: 1.68 },
+          { label: "Check", text: check, x: 6.90, y: 3.62, w: 5.05, h: 1.68 }
         ];
 
         panels.forEach(function (panel) {
@@ -2607,7 +2655,7 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
           slide.addShape("roundRect", {
             x: panel.x + 0.22,
             y: panel.y + 0.18,
-            w: 1.55,
+            w: panel.label === "Teacher prompts" ? 1.95 : 1.55,
             h: 0.28,
             rectRadius: 0.07,
             fill: { color: themeColor("E8F5EE") },
@@ -2617,7 +2665,7 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
           slide.addText(panel.label, {
             x: panel.x + 0.30,
             y: panel.y + 0.235,
-            w: 1.40,
+            w: panel.label === "Teacher prompts" ? 1.80 : 1.40,
             h: 0.12,
             fontFace: themeFont(),
             fontSize: 9.2,
@@ -2630,11 +2678,11 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
 
           slide.addText(panel.text, {
             x: panel.x + 0.25,
-            y: panel.y + 0.62,
+            y: panel.y + 0.56,
             w: panel.w - 0.50,
-            h: panel.h - 0.75,
+            h: panel.h - 0.64,
             fontFace: themeFont(),
-            fontSize: 14.6,
+            fontSize: 12.4,
             color: themeColor("1F2933"),
             fit: "shrink",
             valign: "top",
@@ -2776,6 +2824,125 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
 
 
 
+    function getYouDoKeywordsOnly() {
+      try {
+        const box = document.getElementById("keyTermsText");
+        if (!box || !box.value.trim()) return [];
+
+        const keyLines = box.value
+          .replace(/\r\n/g, "\n")
+          .split("\n")
+          .map(function (line) { return line.replace(/^[-•*]\s*/, "").trim(); })
+          .filter(function (line) { return line.length > 0; });
+
+        return buildKeyTermItems(keyLines)
+          .map(function (item) { return item.term.trim(); })
+          .filter(function (term) { return term.length > 0 && !/^\[No /i.test(term); })
+          .slice(0, 8);
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function addKeywordChipsForYouDo(slide, keywords) {
+      slide.addShape("roundRect", {
+        x: 7.92,
+        y: 1.38,
+        w: 4.1,
+        h: 4.05,
+        rectRadius: 0.12,
+        fill: { color: themeColor("FFF7D6") },
+        line: { color: themeColor("E6C84F"), width: 1.1 }
+      });
+
+      slide.addText("Key words to use", {
+        x: 8.20,
+        y: 1.66,
+        w: 3.55,
+        h: 0.34,
+        fontFace: themeFont(),
+        fontSize: 19,
+        bold: true,
+        color: themeColor("5A4600"),
+        fit: "shrink",
+        margin: 0,
+        align: "center"
+      });
+
+      const usableKeywords = keywords.length > 0
+        ? keywords
+        : ["Use today’s key vocabulary"];
+
+      const chipX = 8.20;
+      const chipW = 3.55;
+      const chipH = usableKeywords.length <= 5 ? 0.36 : 0.30;
+      const chipGap = usableKeywords.length <= 5 ? 0.15 : 0.11;
+      const startY = 2.18;
+
+      usableKeywords.forEach(function (keyword, index) {
+        const y = startY + index * (chipH + chipGap);
+        if (y + chipH > 4.75) return;
+
+        // Match the Key Terms post-it note style for You Do keywords.
+        slide.addShape("roundRect", {
+          x: chipX + 0.04,
+          y: y + 0.03,
+          w: chipW,
+          h: chipH,
+          rectRadius: 0.04,
+          fill: { color: "F4DB67", transparency: 28 },
+          line: { color: "E3C44A", width: 0.4 }
+        });
+
+        slide.addShape("rect", {
+          x: chipX + (chipW / 2) - 0.28,
+          y: y - 0.02,
+          w: 0.56,
+          h: 0.07,
+          fill: { color: "F6E7B8", transparency: 5 },
+          line: { color: "F6E7B8", transparency: 100 }
+        });
+
+        slide.addShape("roundRect", {
+          x: chipX,
+          y: y,
+          w: chipW,
+          h: chipH,
+          rectRadius: 0.04,
+          fill: { color: "FFE66A" },
+          line: { color: "D8B11E", width: 0.8 }
+        });
+
+        slide.addText(keyword, {
+          x: chipX + 0.13,
+          y: y + 0.07,
+          w: chipW - 0.26,
+          h: 0.14,
+          fontFace: themeFont(),
+          fontSize: usableKeywords.length <= 5 ? 11.5 : 10.2,
+          bold: true,
+          color: themeColor("5A4600"),
+          fit: "shrink",
+          margin: 0,
+          align: "center"
+        });
+      });
+
+      slide.addText("Try to use at least two correctly.", {
+        x: 8.22,
+        y: 5.02,
+        w: 3.52,
+        h: 0.22,
+        fontFace: themeFont(),
+        fontSize: 10.5,
+        bold: true,
+        color: themeColor("5A4600"),
+        fit: "shrink",
+        margin: 0,
+        align: "center"
+      });
+    }
+
     function addYouDoIndependentLayout(slide, lines) {
       const cleanLines = lines
         .map(function (line) { return line.replace(/^[-•*]\s*/, "").trim(); })
@@ -2796,11 +2963,11 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
         line: { color: themeColor("CFE5D8"), width: 1.1 }
       });
 
-      // Main independent task area
+      // Main independent task area: wider card with separated numbered task cards.
       slide.addShape("roundRect", {
         x: 1.05,
         y: 1.38,
-        w: 6.15,
+        w: 6.62,
         h: 4.05,
         rectRadius: 0.12,
         fill: { color: themeColor("FFFFFF") },
@@ -2810,7 +2977,7 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
       slide.addShape("roundRect", {
         x: 1.32,
         y: 1.64,
-        w: 1.68,
+        w: 1.9,
         h: 0.34,
         rectRadius: 0.08,
         fill: { color: themeColor("E8F5EE") },
@@ -2820,7 +2987,7 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
       slide.addText("Your task", {
         x: 1.42,
         y: 1.71,
-        w: 1.48,
+        w: 1.70,
         h: 0.14,
         fontFace: themeFont(),
         fontSize: 10.5,
@@ -2830,78 +2997,65 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
         margin: 0
       });
 
-      const taskRichText = tasks.map(function (task) {
-        return {
-          text: task,
-          options: { bullet: { type: "bullet" }, breakLine: true }
-        };
+      const cardX = 1.28;
+      const cardW = 6.15;
+      const cardTop = 2.14;
+      const gap = tasks.length >= 4 ? 0.10 : 0.14;
+      const cardH = tasks.length >= 4 ? 0.66 : (tasks.length === 3 ? 0.78 : 0.96);
+      const taskFont = tasks.length >= 4 ? 11.8 : (tasks.length === 3 ? 13.2 : 14.2);
+
+      tasks.forEach(function (task, index) {
+        const cleanTask = task.replace(/^\d+[.)]\s*/, "");
+        const y = cardTop + index * (cardH + gap);
+
+        slide.addShape("roundRect", {
+          x: cardX,
+          y: y,
+          w: cardW,
+          h: cardH,
+          rectRadius: 0.08,
+          fill: { color: themeColor("F8FCFA") },
+          line: { color: themeColor("D8E3DD"), width: 0.75 }
+        });
+
+        slide.addShape("ellipse", {
+          x: cardX + 0.18,
+          y: y + 0.16,
+          w: 0.42,
+          h: 0.42,
+          fill: { color: themeColor("2F6F4E") },
+          line: { color: themeColor("2F6F4E"), width: 0.5 }
+        });
+
+        slide.addText(String(index + 1), {
+          x: cardX + 0.18,
+          y: y + 0.24,
+          w: 0.42,
+          h: 0.12,
+          fontFace: themeFont(),
+          fontSize: 10.5,
+          bold: true,
+          color: themeColor("FFFFFF"),
+          align: "center",
+          margin: 0
+        });
+
+        slide.addText(cleanTask, {
+          x: cardX + 0.75,
+          y: y + 0.10,
+          w: cardW - 1.0,
+          h: cardH - 0.12,
+          fontFace: themeFont(),
+          fontSize: taskFont,
+          bold: true,
+          color: themeColor("1F2933"),
+          fit: "shrink",
+          valign: "mid",
+          margin: 0.02
+        });
       });
 
-      slide.addText(taskRichText, {
-        x: 1.42,
-        y: 2.18,
-        w: 5.45,
-        h: 2.8,
-        fontFace: themeFont(),
-        fontSize: tasks.length > 3 ? 16 : 18.5,
-        color: themeColor("1F2933"),
-        fit: "shrink",
-        valign: "top",
-        paraSpaceAfterPt: 8,
-        margin: 0.03
-      });
-
-      // Check before you finish card
-      slide.addShape("roundRect", {
-        x: 7.48,
-        y: 1.38,
-        w: 4.55,
-        h: 4.05,
-        rectRadius: 0.12,
-        fill: { color: themeColor("FFF7D6") },
-        line: { color: themeColor("E6C84F"), width: 1.1 }
-      });
-
-      slide.addText("Before you finish", {
-        x: 7.78,
-        y: 1.68,
-        w: 3.95,
-        h: 0.34,
-        fontFace: themeFont(),
-        fontSize: 19,
-        bold: true,
-        color: themeColor("5A4600"),
-        fit: "shrink",
-        margin: 0
-      });
-
-      const checklist = [
-        "Is the question answered?",
-        "Is the method or reasoning shown?",
-        "Is key vocabulary used correctly?",
-        "Have mistakes been checked?"
-      ];
-
-      const checkRichText = checklist.map(function (item) {
-        return {
-          text: item,
-          options: { bullet: { type: "bullet" }, breakLine: true }
-        };
-      });
-
-      slide.addText(checkRichText, {
-        x: 7.85,
-        y: 2.35,
-        w: 3.75,
-        h: 2.35,
-        fontFace: themeFont(),
-        fontSize: 14.5,
-        color: themeColor("1F2933"),
-        fit: "shrink",
-        valign: "top",
-        paraSpaceAfterPt: 9,
-        margin: 0.03
-      });
+      addKeywordChipsForYouDo(slide, getYouDoKeywordsOnly());
     }
 
 
@@ -3480,10 +3634,10 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
       slide.addText(headerText, {
         x: 0.45,
         y: 0.60,
-        w: hmg ? 12.35 : (hasSpec ? 8.95 : 12.35),
+        w: hmg ? 7.55 : (hasSpec ? 8.95 : 12.35),
         h: 0.38,
         fontFace: themeFont(),
-        fontSize: 18,
+        fontSize: hmg ? 17 : 18,
         color: themeColor("24583E"),
         bold: true,
         fit: "shrink",
@@ -3587,6 +3741,9 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
       });
 
       addHMGTodayRhscBadges(slide, section.title);
+      if (section.title === "You Do") {
+        addYouDoChoiceGuidance(slide);
+      }
 
       const displayLines = getStudentFacingLines(section, lines);
 
@@ -3723,6 +3880,239 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
       }
 
       return fileName;
+    }
+
+
+    function htmlEscape(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function getRawSectionText(id) {
+      const box = document.getElementById(id);
+      return box ? box.value.trim() : "";
+    }
+
+    function getStudentWebpageFileName() {
+      const lessonTitle = document.getElementById("lessonTitle").value.trim() || "Synergy Assist Lesson";
+      return safeFileName(compactFileNameFromTitle(lessonTitle) + "_student_catch_up.html");
+    }
+
+    function splitUsefulLines(text) {
+      return String(text || "")
+        .replace(/\r\n/g, "\n")
+        .split("\n")
+        .map(function (line) { return line.trim(); })
+        .filter(function (line) { return line && !/^\[No .* section detected/i.test(line); });
+    }
+
+    function linesToListHtml(text) {
+      const lines = splitUsefulLines(text);
+      if (lines.length === 0) return '<p class="empty">No content was provided for this section.</p>';
+      return '<ul>' + lines.map(function (line) { return '<li>' + htmlEscape(line) + '</li>'; }).join('') + '</ul>';
+    }
+
+    function keyTermsToPostItsHtml(text) {
+      const lines = splitUsefulLines(text);
+      if (lines.length === 0) return '<p class="empty">No key vocabulary was provided.</p>';
+      const cards = lines.map(function (line) {
+        const cleaned = line.replace(/^[-•*]\s*/, '').trim();
+        let term = cleaned;
+        let definition = "";
+
+        const separatorMatch = cleaned.match(/\s*(?:[:–—]|\s-\s)\s*/);
+        if (separatorMatch) {
+          const index = separatorMatch.index;
+          term = cleaned.slice(0, index).trim();
+          definition = cleaned.slice(index + separatorMatch[0].length).trim();
+        }
+
+        if (!definition) {
+          definition = "Definition not provided in the lesson output. Ask your teacher or check your class notes.";
+        }
+
+        return '<article class="postit"><h3>' + htmlEscape(term) + '</h3>' +
+          '<p>' + htmlEscape(definition) + '</p>' +
+          '</article>';
+      }).join('');
+      return '<div class="postit-grid">' + cards + '</div>';
+    }
+
+    function downloadTextFile(fileName, content, mimeType) {
+      const blob = new Blob([content], { type: mimeType || 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 500);
+    }
+
+    function createStudentFacingWebpage() {
+      log("Student Facing Webpage clicked.");
+
+      const raw = document.getElementById("saLessonText").value.trim();
+      const anySectionFilled = SECTIONS.some(function (section) {
+        return getRawSectionText(section.id) && !/^\[No .* section detected/i.test(getRawSectionText(section.id));
+      });
+
+      if (raw && !anySectionFilled) {
+        populateFromSALesson(false);
+      }
+
+      const lessonTitle = document.getElementById("lessonTitle").value.trim() || "Synergy Assist Lesson";
+      const objectives = getRawSectionText("objectivesText");
+      const keyTerms = getRawSectionText("keyTermsText");
+      const presentation = getRawSectionText("presentationText");
+      const iDo = getRawSectionText("iDoText");
+      const weDo = getRawSectionText("weDoText");
+      const youDo = getRawSectionText("youDoText");
+      const checkWork = getRawSectionText("checkYourWorkText");
+      const examQuestion = getRawSectionText("examQuestionText");
+      const improveAnswer = getRawSectionText("improveAnswerText");
+      const exitTicket = getRawSectionText("exitTicketText");
+      const finalCheck = getRawSectionText("finalCheckText");
+
+      if (!objectives && !iDo && !youDo && !keyTerms) {
+        alert("Populate the lesson sections first, or paste a Synergy Assist lesson before creating the student webpage.");
+        log("Student webpage cancelled: insufficient lesson content.");
+        return;
+      }
+
+      const generatedDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      const pageTitle = htmlEscape(lessonTitle + " - Student Catch-Up");
+      const fileName = getStudentWebpageFileName();
+
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${pageTitle}</title>
+  <style>
+    :root { --green:#2f6f4e; --green-dark:#24583e; --bg:#f7f9f8; --card:#ffffff; --text:#17202a; --muted:#667085; --border:#d8e3dd; --yellow:#fff4b8; --yellow-border:#e7cf61; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Arial, Helvetica, sans-serif; background:var(--bg); color:var(--text); line-height:1.55; }
+    header { background:linear-gradient(135deg, var(--green-dark), var(--green)); color:white; padding:28px 20px; }
+    .wrap { max-width:1050px; margin:0 auto; }
+    h1 { margin:0; font-size:34px; line-height:1.1; letter-spacing:-0.02em; }
+    .subtitle { margin:10px 0 0; font-size:17px; opacity:0.95; }
+    nav { position:sticky; top:0; z-index:10; background:white; border-bottom:1px solid var(--border); box-shadow:0 4px 12px rgba(16,24,40,0.04); }
+    nav .wrap { display:flex; flex-wrap:wrap; gap:8px; padding:10px 16px; }
+    nav a, button { border:0; border-radius:999px; padding:9px 13px; background:#edf4f0; color:var(--green-dark); font-weight:800; text-decoration:none; font-size:14px; cursor:pointer; }
+    nav a:hover, button:hover { background:#dfeee6; }
+    main { max-width:1050px; margin:0 auto; padding:18px 16px 40px; }
+    section { background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px; margin:14px 0; box-shadow:0 8px 20px rgba(16,24,40,0.05); }
+    h2 { margin:0 0 12px; color:var(--green-dark); font-size:26px; }
+    h3 { margin:0 0 8px; color:#243b2f; }
+    .student-note { background:#eef7f2; border:1px solid #cfe5d8; border-left:6px solid var(--green); border-radius:14px; padding:14px; margin-top:14px; }
+    .task { background:#f9fafb; border:1px solid var(--border); border-radius:14px; padding:14px; }
+    .onenote { background:#fff7d6; border:1px solid var(--yellow-border); border-left:6px solid #d6aa00; border-radius:14px; padding:14px; }
+    ul { margin:8px 0 0 20px; padding:0; }
+    li { margin:7px 0; }
+    .postit-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:14px; }
+    .postit { background:var(--yellow); border:1px solid var(--yellow-border); border-radius:10px; padding:14px; box-shadow:0 8px 14px rgba(84,70,0,0.10); transform:rotate(-0.5deg); }
+    .postit:nth-child(even) { transform:rotate(0.6deg); }
+    .postit h3 { font-size:20px; }
+    .postit p { margin:0; }
+    details { background:#fbfdfc; border:1px solid var(--border); border-radius:14px; padding:12px 14px; margin-top:10px; }
+    summary { cursor:pointer; font-weight:800; color:var(--green-dark); }
+    .empty { color:var(--muted); font-style:italic; }
+    .footer { color:var(--muted); font-size:13px; margin-top:18px; text-align:center; }
+    @media print { nav, .no-print { display:none; } body { background:white; } section { box-shadow:none; break-inside:avoid; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>${htmlEscape(lessonTitle)}</h1>
+      <p class="subtitle">Student catch-up page · Read from the webpage and complete the work on paper.</p>
+    </div>
+  </header>
+
+  <nav class="no-print"><div class="wrap">
+    <a href="#start">Start</a>
+    <a href="#missed">What you missed</a>
+    <a href="#vocab">Key vocabulary</a>
+    <a href="#learn">Learn it</a>
+    <a href="#worked">Worked example</a>
+    <a href="#practice">Try it</a>
+    <a href="#answers">Check answers</a>
+    <a href="#exit">Exit ticket</a>
+    <button onclick="window.print()">Print</button>
+  </div></nav>
+
+  <main>
+    <section id="start">
+      <h2>Start here</h2>
+      <div class="onenote">
+        <p><strong>Use paper for this catch-up work.</strong></p>
+        <p>At the top of your page, write:</p>
+        <ul>
+          <li><strong>Lesson name:</strong> ${htmlEscape(lessonTitle)}</li>
+          <li><strong>Date:</strong> ____________________</li>
+        </ul>
+        <p>Write neatly. Use headings and number each section as you go.</p>
+      </div>
+    </section>
+    <section id="missed">
+      <h2>1. What you missed</h2>
+      <div class="student-note"><strong>Start on paper:</strong> At the top of your page, write the lesson name and today's date neatly. Then work through this page in order.</div>
+      <h3>By the end, you should be able to:</h3>
+      ${linesToListHtml(objectives)}
+      <details><summary>Presentation reminder</summary>${linesToListHtml(presentation)}</details>
+    </section>
+
+    <section id="vocab">
+      <h2>2. Key vocabulary</h2>
+      ${keyTermsToPostItsHtml(keyTerms)}
+      <div class="student-note"><strong>Vocabulary task:</strong> Copy each keyword and definition neatly onto your paper. Then pick one keyword and use it correctly in a sentence.</div>
+    </section>
+
+    <section id="learn">
+      <h2>3. Learn it</h2>
+      <p>Read these points carefully. They cover the main learning from the lesson.</p>
+      ${linesToListHtml(weDo || iDo)}
+    </section>
+
+    <section id="worked">
+      <h2>4. Worked example</h2>
+      <p>Use this example to see how the thinking should be structured.</p>
+      ${linesToListHtml(iDo)}
+    </section>
+
+    <section id="practice">
+      <h2>5. Try it yourself</h2>
+      <div class="task">${linesToListHtml(youDo)}</div>
+      <details><summary>Exam-style practice</summary>${linesToListHtml(examQuestion)}</details>
+    </section>
+
+    <section id="answers">
+      <h2>6. Check your answers</h2>
+      <p>Try the task first, then open the checks below.</p>
+      <details><summary>Show check your work guidance</summary>${linesToListHtml(checkWork)}</details>
+      <details><summary>Show improved answer guidance</summary>${linesToListHtml(improveAnswer)}</details>
+    </section>
+
+    <section id="exit">
+      <h2>7. Exit ticket</h2>
+      ${linesToListHtml(exitTicket)}
+      <details><summary>Final check</summary>${linesToListHtml(finalCheck)}</details>
+    </section>
+
+    <p class="footer">Generated by Synergy Assist Parser · ${htmlEscape(generatedDate)} · Teacher review required before sharing.</p>
+  </main>
+</body>
+</html>`;
+
+      downloadTextFile(fileName, html, 'text/html;charset=utf-8');
+      log("SUCCESS: Student-facing webpage generated: " + fileName);
     }
 
 

@@ -638,16 +638,17 @@
       const rows = splitRhscBadgesIntoRows(coding, maxRowWidth, gap);
 
       if (sectionTitle === "You Do") {
+        // Keep the teacher-edit note visible but away from the title and badge rows.
         slide.addText("Delete as applicable\nKeep one clear routine", {
-          x: 4.85,
-          y: 0.54,
-          w: 2.05,
-          h: 0.48,
+          x: 5.80,
+          y: 1.005,
+          w: 2.35,
+          h: 0.22,
           fontFace: themeFont(),
-          fontSize: 6.0,
+          fontSize: 5.8,
           italic: true,
-          color: "667085",
-          align: "right",
+          color: "4B5563",
+          align: "left",
           valign: "mid",
           margin: 0.01,
           breakLine: false,

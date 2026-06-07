@@ -578,7 +578,7 @@
 
     function getRhscBadgeWidth(label) {
       const text = String(label || "");
-      return Math.max(0.56, Math.min(1.38, 0.31 + (text.length * 0.041)));
+      return Math.max(0.72, Math.min(1.65, 0.40 + (text.length * 0.050)));
     }
 
     function splitRhscBadgesIntoRows(badges, maxRowWidth, gap) {
@@ -618,12 +618,12 @@
       const coding = getRhscCodingForSection(sectionTitle);
       if (!coding) return;
 
-      const gap = 0.045;
-      const maxRowWidth = 5.55;
+      const gap = 0.055;
+      const maxRowWidth = 6.05;
       const rightEdge = 12.72;
-      const startY = 0.47;
-      const rowGap = 0.205;
-      const h = 0.17;
+      const startY = 0.44;
+      const rowGap = 0.285;
+      const h = 0.24;
       const rows = splitRhscBadgesIntoRows(coding, maxRowWidth, gap);
 
       rows.forEach(function (row, rowIndex) {
@@ -640,17 +640,17 @@
             y: y,
             w: badge.w,
             h: h,
-            rectRadius: 0.035,
+            rectRadius: 0.055,
             fill: { color: style.fill, transparency: 5 },
             line: { color: style.line, width: 0.45, transparency: 15 }
           });
           slide.addText(badge.text, {
-            x: x + 0.035,
-            y: y + 0.032,
-            w: badge.w - 0.07,
-            h: 0.09,
+            x: x + 0.045,
+            y: y + 0.045,
+            w: badge.w - 0.09,
+            h: 0.13,
             fontFace: themeFont(),
-            fontSize: 5.7,
+            fontSize: 7.2,
             bold: true,
             color: "17202A",
             align: "center",

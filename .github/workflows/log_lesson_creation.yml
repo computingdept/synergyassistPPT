@@ -1,0 +1,80 @@
+name: Log lesson creation
+
+on:
+  workflow_dispatch:
+    inputs:
+      iso_timestamp:
+        required: true
+        type: string
+      london_date:
+        required: true
+        type: string
+      london_time:
+        required: true
+        type: string
+      subject:
+        required: false
+        type: string
+      key_stage:
+        required: false
+        type: string
+      specification:
+        required: false
+        type: string
+      lesson_title:
+        required: false
+        type: string
+      output_type:
+        required: false
+        type: string
+      file_name:
+        required: false
+        type: string
+      display_mode:
+        required: false
+        type: string
+      parser_version:
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  append-log:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Append lesson creation to CSV
+        run: |
+          mkdir -p lesson_logs
+          touch lesson_logs/lesson_creation_log.csv
+
+          if [ ! -s lesson_logs/lesson_creation_log.csv ]; then
+            echo "iso_timestamp,london_date,london_time,subject,key_stage,specification,lesson_title,output_type,file_name,display_mode,parser_version" > lesson_logs/lesson_creation_log.csv
+          fi
+
+          printf '%s,%s,%s,"%s","%s","%s","%s","%s","%s","%s","%s"\n' \
+            "${{ inputs.iso_timestamp }}" \
+            "${{ inputs.london_date }}" \
+            "${{ inputs.london_time }}" \
+            "${{ inputs.subject }}" \
+            "${{ inputs.key_stage }}" \
+            "${{ inputs.specification }}" \
+            "${{ inputs.lesson_title }}" \
+            "${{ inputs.output_type }}" \
+            "${{ inputs.file_name }}" \
+            "${{ inputs.display_mode }}" \
+            "${{ inputs.parser_version }}" \
+            >> lesson_logs/lesson_creation_log.csv
+
+      - name: Commit updated log
+        run: |
+          git config user.name "lesson-log-bot"
+          git config user.email "lesson-log-bot@users.noreply.github.com"
+          git add lesson_logs/lesson_creation_log.csv
+          git commit -m "Log lesson creation" || echo "No changes to commit"
+          git push

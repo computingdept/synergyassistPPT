@@ -394,6 +394,8 @@
       <div class="action-row">
         <button class="secondary" onclick="loadPowerPointLibrary()">Load / Check library</button>
         <button class="secondary" onclick="testTextDownload()">Test download</button>
+        <button class="secondary" onclick="copyPendingLessonLogs()">Copy lesson log queue</button>
+        <button class="secondary" onclick="clearPendingLessonLogs()">Clear lesson log queue</button>
         <button class="secondary" onclick="clearDebug()">Clear debug</button>
         <button class="secondary" onclick="copyDebug()">Copy debug</button>
       </div>
@@ -405,6 +407,14 @@
     let debugLines = [];
     let libraryLoading = false;
 
+    // Lesson creation logging
+    // IMPORTANT: Do not put a GitHub personal access token in this HTML file.
+    // Set LESSON_LOG_ENDPOINT to a secure endpoint that writes to GitHub,
+    // for example a small Render/Vercel/Netlify function, Power Automate flow,
+    // Google Apps Script, or GitHub Actions proxy.
+    const PARSER_VERSION = "v73-hmgtoday-display-mode-lesson-log";
+    const LESSON_LOG_ENDPOINT = "";
+    const LESSON_LOG_QUEUE_KEY = "synergyAssistLessonLogQueue";
 
     const DISPLAY_THEMES = {
       default: {
@@ -809,6 +819,147 @@ Close the lesson by returning to the objectives and success criteria. The genera
 Adaptive teaching prompts:
 Use 'I can...' statements carefully. Ask pupils to identify one thing they understand and one thing they may need to practise again. This supports metacognition without adding unnecessary workload.`
     };
+
+    function getLondonTimestampParts() {
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/London',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
+      }).formatToParts(now).reduce(function (acc, part) {
+        acc[part.type] = part.value;
+        return acc;
+      }, {});
+
+      return {
+        iso_timestamp: now.toISOString(),
+        london_date: parts.year + '-' + parts.month + '-' + parts.day,
+        london_time: parts.hour + ':' + parts.minute + ':' + parts.second
+      };
+    }
+
+    function inferLessonMetadata(lessonTitle) {
+      const title = String(lessonTitle || '').trim();
+      const bracketMatch = title.match(/\(([^)]*)\)/);
+      const specText = bracketMatch ? bracketMatch[1].trim() : '';
+      const combined = (title + ' ' + specText).toLowerCase();
+
+      let subject = '';
+      let keyStage = '';
+      let specification = specText;
+
+      if (/\bj277\b|ocr gcse|gcse computer science/.test(combined)) {
+        subject = 'Computer Science';
+        keyStage = 'KS4';
+        specification = specification || 'OCR J277';
+      } else if (/\bh446\b|ocr a level|a level computer science/.test(combined)) {
+        subject = 'Computer Science';
+        keyStage = 'KS5';
+        specification = specification || 'OCR H446';
+      } else if (/\b7182\b|aqa psychology|psychology/.test(combined)) {
+        subject = 'Psychology';
+        keyStage = 'KS5';
+        specification = specification || 'AQA 7182';
+      }
+
+      return {
+        subject: subject,
+        key_stage: keyStage,
+        specification: specification
+      };
+    }
+
+    function getLessonLogQueue() {
+      try {
+        return JSON.parse(localStorage.getItem(LESSON_LOG_QUEUE_KEY) || '[]');
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function savePendingLessonLog(payload) {
+      try {
+        const queue = getLessonLogQueue();
+        queue.push(payload);
+        localStorage.setItem(LESSON_LOG_QUEUE_KEY, JSON.stringify(queue.slice(-100)));
+        log('Lesson log saved locally. Pending logs: ' + Math.min(queue.length, 100));
+      } catch (error) {
+        log('Lesson log could not be saved locally: ' + error.message);
+      }
+    }
+
+    function copyPendingLessonLogs() {
+      const queue = getLessonLogQueue();
+      if (queue.length === 0) {
+        alert('There are no pending lesson logs stored in this browser.');
+        return;
+      }
+
+      const headers = ['iso_timestamp','london_date','london_time','subject','key_stage','specification','lesson_title','output_type','file_name','display_mode','parser_version'];
+      const csv = headers.join(',') + '\n' + queue.map(function (row) {
+        return headers.map(function (key) {
+          const value = String(row[key] || '').replace(/"/g, '""');
+          return '"' + value + '"';
+        }).join(',');
+      }).join('\n');
+
+      if (!navigator.clipboard) {
+        alert('Clipboard API unavailable. Copy from the debug area instead.');
+        log(csv);
+        return;
+      }
+
+      navigator.clipboard.writeText(csv)
+        .then(function () { alert('Pending lesson logs copied as CSV.'); })
+        .catch(function () {
+          log(csv);
+          alert('Could not copy automatically. CSV has been added to the debug area.');
+        });
+    }
+
+    function clearPendingLessonLogs() {
+      localStorage.removeItem(LESSON_LOG_QUEUE_KEY);
+      log('Pending lesson log queue cleared.');
+      alert('Pending lesson log queue cleared for this browser.');
+    }
+
+    async function logLessonCreation(outputType, fileName) {
+      const lessonTitle = document.getElementById('lessonTitle').value.trim() || 'Synergy Assist Lesson';
+      const timestamp = getLondonTimestampParts();
+      const metadata = inferLessonMetadata(lessonTitle);
+      const payload = Object.assign({}, timestamp, metadata, {
+        lesson_title: lessonTitle,
+        output_type: outputType,
+        file_name: fileName || '',
+        display_mode: currentDisplayMode(),
+        parser_version: PARSER_VERSION
+      });
+
+      if (!LESSON_LOG_ENDPOINT) {
+        log('Lesson creation recorded locally only: set LESSON_LOG_ENDPOINT to send to GitHub.');
+        savePendingLessonLog(payload);
+        return;
+      }
+
+      try {
+        const response = await fetch(LESSON_LOG_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          keepalive: true
+        });
+
+        if (!response.ok) {
+          throw new Error('HTTP ' + response.status + ' ' + response.statusText);
+        }
+
+        log('Lesson creation log sent: ' + outputType + ' / ' + fileName);
+      } catch (error) {
+        log('Lesson creation log failed, saved locally: ' + error.message);
+        savePendingLessonLog(payload);
+      }
+    }
 
     function log(message) {
       const time = new Date().toLocaleTimeString();
@@ -4134,6 +4285,7 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
 
       downloadTextFile(fileName, html, 'text/html;charset=utf-8');
       log("SUCCESS: Student-facing webpage generated: " + fileName);
+      logLessonCreation("Student Webpage", fileName);
     }
 
 
@@ -4183,6 +4335,7 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
         log("Writing file: " + outputFileName);
         await pptx.writeFile({ fileName: outputFileName });
         log("SUCCESS: PowerPoint generated: " + outputFileName);
+        logLessonCreation("PowerPoint", outputFileName);
       } catch (error) {
         log("ERROR during PowerPoint creation: " + error.message);
         console.error(error);

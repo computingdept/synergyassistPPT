@@ -943,18 +943,17 @@ Use 'I can...' statements carefully. Ask pupils to identify one thing they under
       }
 
       try {
-        const response = await fetch(LESSON_LOG_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          keepalive: true
-        });
+      await fetch(LESSON_LOG_ENDPOINT, {
+  method: 'POST',
+  mode: 'no-cors',
+  headers: {
+    'Content-Type': 'text/plain;charset=utf-8'
+  },
+  body: JSON.stringify(payload),
+  keepalive: true
+});
 
-        if (!response.ok) {
-          throw new Error('HTTP ' + response.status + ' ' + response.statusText);
-        }
-
-        log('Lesson creation log sent: ' + outputType + ' / ' + fileName);
+log('Lesson creation log sent to endpoint: ' + outputType + ' / ' + fileName);
       } catch (error) {
         log('Lesson creation log failed, saved locally: ' + error.message);
         savePendingLessonLog(payload);

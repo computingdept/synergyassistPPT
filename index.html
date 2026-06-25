@@ -1824,15 +1824,23 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
       });
     }
 
+
+    function stripLeadingQuestionNumber(textValue) {
+      return String(textValue || "")
+        .replace(/^\s*Q\s*\d+\s*[:.)-]\s*/i, "")
+        .replace(/^\s*\d+\s*[:.)-]\s*/i, "")
+        .trim();
+    }
+
     function addIconsModeDoNowQuestion(slide, item, index, includeAnswer) {
       if (!includeAnswer) {
         const l = getDoNowIconLayout(index);
         const rawText = item.text || "";
         const isMcq = String(item.type || "").toLowerCase().includes("mcq") || String(rawText || "").toLowerCase().includes("multiple choice");
-        let questionText = rawText;
+        let questionText = stripLeadingQuestionNumber(rawText);
         if (isMcq) {
           const mcq = splitMcqText(rawText);
-          questionText = mcq.question || rawText;
+          questionText = stripLeadingQuestionNumber(mcq.question || rawText);
         }
 
         // Clean icons-mode Do Now style:
@@ -1873,12 +1881,12 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
       // Icons-mode Do Now Review should visually match the Do Now slide:
       // no small white question-type labels, no boxes, just Q numbers as text.
       const l = getDoNowIconLayout(index);
-      const questionText = item.question || "";
+      const questionText = stripLeadingQuestionNumber(item.question || "");
 
-      slide.addText("Q" + String(index + 1) + ":", {
+      slide.addText("Q" + String(index + 1) + ".", {
         x: l.cardX + 0.02,
-        y: l.cardY + 0.16,
-        w: 0.48,
+        y: l.cardY + 0.20,
+        w: 0.46,
         h: 0.24,
         fontFace: "Aptos",
         fontSize: 20,
@@ -1892,7 +1900,7 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
 
       slide.addText(questionText, {
         x: l.cardX + 0.55,
-        y: l.cardY + 0.16,
+        y: l.cardY + 0.20,
         w: l.cardW - 0.58,
         h: 0.62,
         fontFace: "Aptos",
@@ -4249,19 +4257,20 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
       const hmg = isHMGTodayMode();
 
       slide.addText(headerText, {
-        x: isIconsMode() ? 1.88 : 0.45,
-        y: isIconsMode() ? 0.10 : 0.60,
-        w: isIconsMode() ? 8.65 : (hmg ? 7.55 : (hasSpec ? 8.95 : 12.35)),
-        h: isIconsMode() ? 0.56 : 0.38,
+        x: isIconsMode() ? 1.78 : 0.45,
+        y: isIconsMode() ? 0.08 : 0.60,
+        w: isIconsMode() ? 8.35 : (hmg ? 7.55 : (hasSpec ? 8.95 : 12.35)),
+        h: isIconsMode() ? 0.62 : 0.38,
         fontFace: themeFont(),
-        fontSize: isIconsMode() ? 24 : (hmg ? 17 : 18),
+        fontSize: isIconsMode() ? 22 : (hmg ? 17 : 18),
         color: "000000",
         bold: true,
         underline: isIconsMode(),
         fit: "shrink",
         margin: 0,
         breakLine: false,
-        align: "left"
+        align: isIconsMode() ? "center" : "left",
+        valign: "mid"
       });
 
       if (hasSpec) {
@@ -4388,8 +4397,8 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
       });
 
       const structureIcons = [
-        ["Do Now", 0.48], ["I Do", 2.48], ["We Do", 4.48],
-        ["You Do", 6.48], ["Questioning", 8.48], ["Exit", 10.48]
+        ["Do Now", 0.70], ["I Do", 2.78], ["We Do", 4.86],
+        ["You Do", 6.94], ["Questioning", 9.02]
       ];
 
       structureIcons.forEach(function(item) {
@@ -4446,12 +4455,6 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
         x: 0.90, y: 5.82, w: 10.85, h: 0.18,
         fontFace: "Aptos", fontSize: 10.8,
         color: "000000", margin: 0, fit: "shrink"
-      });
-
-      slide.addText("Slide " + slideNumber + " of " + totalSlides, {
-        x: 10.55, y: 6.52, w: 2.1, h: 0.2,
-        fontFace: themeFont(), fontSize: 7.5,
-        color: themeColor("98A2B3"), align: "right"
       });
 
       if (typeof slide.addNotes === "function") {

@@ -2475,6 +2475,7 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
 
 
 
+
     function addDoNowCards(slide, lines) {
       const items = buildDoNowItemsWithMcqOptionsV156(lines);
       const fallbackItems = items.length > 0 ? items : [
@@ -2484,16 +2485,20 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
         { question: "Add Do Now question 4.", options: [] }
       ];
 
-      const hasLongText = fallbackItems.some(function(item) {
-        return (item.question || "").length > 58 || (item.options || []).join(" ").length > 40;
+      const hasLongOptions = fallbackItems.some(function(item) {
+        return (item.options || []).join(" ").length > 55;
       });
 
-      // Long mode gives the questions much more horizontal space.
+      const hasLongText = hasLongOptions || fallbackItems.some(function(item) {
+        return (item.question || "").length > 58;
+      });
+
+      // Long mode: top row gets more depth, so Q3/Q4 are moved down.
       const positions = hasLongText ? [
-        { x: 0.95, y: 1.36, w: 4.85, h: 1.28 },
-        { x: 5.65, y: 1.36, w: 5.05, h: 1.28 },
-        { x: 0.95, y: 3.10, w: 4.85, h: 1.28 },
-        { x: 5.65, y: 3.10, w: 5.05, h: 1.28 }
+        { x: 0.95, y: 1.28, w: 4.85, h: 1.55 },
+        { x: 5.65, y: 1.28, w: 5.05, h: 1.85 },
+        { x: 0.95, y: hasLongOptions ? 3.55 : 3.18, w: 4.85, h: 1.28 },
+        { x: 5.65, y: hasLongOptions ? 3.55 : 3.18, w: 5.05, h: 1.28 }
       ] : (isIconsMode() ? [
         { x: 1.02, y: 1.48, w: 4.22, h: 1.24 },
         { x: 5.52, y: 1.48, w: 4.22, h: 1.24 },
@@ -2509,7 +2514,10 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
       fallbackItems.slice(0, 4).forEach(function(item, index) {
         const pos = positions[index];
         const hasOptions = item.options && item.options.length > 0;
+        const optionText = buildInlineMcqOptionsTextV156(item.options || []);
         const qFont = hasLongText ? 20 : 22;
+        const optionFont = optionText.length > 90 ? 16 : 18;
+        const questionH = hasOptions ? 0.62 : 1.04;
 
         slide.addText(String(index + 1) + ".", {
           x: pos.x,
@@ -2528,7 +2536,7 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
           x: pos.x + 0.42,
           y: pos.y,
           w: pos.w - 0.45,
-          h: hasOptions ? 0.70 : 1.04,
+          h: questionH,
           fontFace: "Aptos",
           fontSize: qFont,
           bold: false,
@@ -2540,19 +2548,19 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
         });
 
         if (hasOptions) {
-          slide.addText(buildInlineMcqOptionsTextV156(item.options), {
+          slide.addText(optionText, {
             x: pos.x + 0.42,
-            y: pos.y + 0.78,
+            y: pos.y + 0.72,
             w: pos.w - 0.45,
-            h: 0.42,
+            h: hasLongOptions ? 0.82 : 0.42,
             fontFace: "Aptos",
-            fontSize: 18,
+            fontSize: optionFont,
             bold: false,
             color: getSelectedReadableTextColourV148(),
             fit: "shrink",
             valign: "top",
             margin: 0.01,
-            breakLine: false
+            breakLine: true
           });
         }
       });
@@ -3828,6 +3836,21 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
 
 
 
+
+
+    function addKeywordPhraseV173(phrases, phrase) {
+      const clean = String(phrase || "")
+        .replace(/^[-•*]\s*/, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      if (!clean) return;
+
+      if (!phrases.some(function(existing) { return existing.toLowerCase() === clean.toLowerCase(); })) {
+        phrases.push(clean);
+      }
+    }
+
     function getCheckAnswerKeywordPhrasesV168() {
       const phrases = [];
       try {
@@ -3838,31 +3861,46 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
           const clean = String(line || "").trim();
           if (!clean) return;
 
-          let term = clean;
           const split = (typeof splitKeyTermLineV155 === "function")
             ? splitKeyTermLineV155(clean)
             : null;
 
           if (split && split.term) {
-            term = split.term.trim();
-          } else {
-            const match = clean.match(/^(.+?)(?:\s*[:\-–—=]\s*.+)$/);
-            term = match ? match[1].trim() : clean;
-          }
+            addKeywordPhraseV173(phrases, split.term);
 
-          if (term && !phrases.some(function(existing) { return existing.toLowerCase() === term.toLowerCase(); })) {
-            phrases.push(term);
-          }
+            // If the definition looks like an alias rather than a long definition,
+            // add it too. Example: "CU – Control Unit" or "ROM - Read Only Memory".
+            const definition = String(split.definition || "").trim();
+            const definitionWordCount = definition.split(/\s+/).filter(Boolean).length;
+            const definitionLooksAlias =
+              definition &&
+              definition !== "Add definition." &&
+              definition.length <= 45 &&
+              definitionWordCount <= 5 &&
+              !/[.;]/.test(definition);
 
-          // Also allow single-word parts of compound terms to highlight.
-          term.split(/\s+/).forEach(function(word) {
-            const w = word.replace(/[^A-Za-z0-9’']/g, "").trim();
-            if (w.length >= 4 && !/^(with|from|into|your|this|that|work|file|used|using)$/i.test(w)) {
-              if (!phrases.some(function(existing) { return existing.toLowerCase() === w.toLowerCase(); })) {
-                phrases.push(w);
-              }
+            if (definitionLooksAlias) {
+              addKeywordPhraseV173(phrases, definition);
             }
-          });
+          } else {
+            const match = clean.match(/^(.+?)(?:\s*[:\-–—=]\s*(.+))$/);
+            if (match) {
+              addKeywordPhraseV173(phrases, match[1]);
+
+              const definition = String(match[2] || "").trim();
+              const definitionWordCount = definition.split(/\s+/).filter(Boolean).length;
+              if (
+                definition &&
+                definition.length <= 45 &&
+                definitionWordCount <= 5 &&
+                !/[.;]/.test(definition)
+              ) {
+                addKeywordPhraseV173(phrases, definition);
+              }
+            } else {
+              addKeywordPhraseV173(phrases, clean);
+            }
+          }
         });
       } catch (error) {
         // If keywords cannot be read, just return no phrases.
@@ -3871,35 +3909,53 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
       return phrases.sort(function(a, b) { return b.length - a.length; });
     }
 
+
+
+    function escapeRegexV171(textValue) {
+      return String(textValue || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
     function buildYellowKeywordRunsV168(textValue, phrases) {
       const source = String(textValue || "");
+      const validPhrases = (phrases || [])
+        .map(function(phrase) { return String(phrase || "").replace(/\s+/g, " ").trim(); })
+        .filter(function(phrase) { return phrase.length > 0; })
+        .sort(function(a, b) { return b.length - a.length; });
+
+      if (validPhrases.length === 0 || source.length === 0) {
+        return [{ text: source, options: { color: getSelectedReadableTextColourV148() } }];
+      }
+
+      const pattern = validPhrases
+        .map(function(phrase) {
+          return escapeRegexV171(phrase).replace(/\s+/g, "\\s+");
+        })
+        .join("|");
+
+      // Whole-term boundary. This prevents "CU" from matching inside "calculations",
+      // while still allowing full standalone acronyms and full phrases.
+      const regex = new RegExp("(^|[^A-Za-z0-9])(" + pattern + ")(?=$|[^A-Za-z0-9])", "gi");
+
       const runs = [];
-      let remaining = source;
+      let lastIndex = 0;
+      let match;
 
-      while (remaining.length > 0) {
-        let bestIndex = -1;
-        let bestPhrase = "";
+      while ((match = regex.exec(source)) !== null) {
+        const prefix = match[1] || "";
+        const keyword = match[2] || "";
+        const fullStart = match.index;
+        const keywordStart = fullStart + prefix.length;
+        const keywordEnd = keywordStart + keyword.length;
 
-        (phrases || []).forEach(function(phrase) {
-          if (!phrase) return;
-          const idx = remaining.toLowerCase().indexOf(String(phrase).toLowerCase());
-          if (idx !== -1 && (bestIndex === -1 || idx < bestIndex || (idx === bestIndex && phrase.length > bestPhrase.length))) {
-            bestIndex = idx;
-            bestPhrase = phrase;
-          }
-        });
-
-        if (bestIndex === -1) {
-          runs.push({ text: remaining, options: { color: getSelectedReadableTextColourV148() } });
-          break;
-        }
-
-        if (bestIndex > 0) {
-          runs.push({ text: remaining.slice(0, bestIndex), options: { color: getSelectedReadableTextColourV148() } });
+        if (keywordStart > lastIndex) {
+          runs.push({
+            text: source.slice(lastIndex, keywordStart),
+            options: { color: getSelectedReadableTextColourV148() }
+          });
         }
 
         runs.push({
-          text: remaining.slice(bestIndex, bestIndex + bestPhrase.length),
+          text: source.slice(keywordStart, keywordEnd),
           options: {
             color: "000000",
             bold: true,
@@ -3907,11 +3963,21 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
           }
         });
 
-        remaining = remaining.slice(bestIndex + bestPhrase.length);
+        lastIndex = keywordEnd;
       }
 
-      return runs;
+      if (lastIndex < source.length) {
+        runs.push({
+          text: source.slice(lastIndex),
+          options: { color: getSelectedReadableTextColourV148() }
+        });
+      }
+
+      return runs.length > 0
+        ? runs
+        : [{ text: source, options: { color: getSelectedReadableTextColourV148() } }];
     }
+
 
     function buildCheckAnswerRichTextV168(lines) {
       const phrases = getCheckAnswerKeywordPhrasesV168();
@@ -4207,7 +4273,12 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
 
 
 
+
     function getImproveKeywordPhrasesV146() {
+      if (typeof getCheckAnswerKeywordPhrasesV168 === "function") {
+        return getCheckAnswerKeywordPhrasesV168();
+      }
+
       const phrases = [];
       try {
         const keyBox = document.getElementById("keyTermsText");
@@ -4217,67 +4288,27 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
           const clean = String(line || "").trim();
           if (!clean) return;
 
-          const match = clean.match(/^(.+?)(?:\s*[:\-–]\s*.+)$/);
-          const term = match ? match[1].trim() : clean;
+          const match = clean.match(/^(.+?)(?:\s*[:\-–—=]\s*.+)$/);
+          const term = (match ? match[1] : clean).replace(/\s+/g, " ").trim();
 
           if (term && !phrases.some(function(existing) { return existing.toLowerCase() === term.toLowerCase(); })) {
             phrases.push(term);
           }
-
-          // Also highlight useful parts of compound terms, e.g. "symbolic" from "symbolic power".
-          term.split(/\s+/).forEach(function(word) {
-            const w = word.replace(/[^A-Za-z0-9’']/g, "").trim();
-            if (w.length >= 5 && !/^(power|about|their|there|where|which)$/i.test(w)) {
-              if (!phrases.some(function(existing) { return existing.toLowerCase() === w.toLowerCase(); })) {
-                phrases.push(w);
-              }
-            }
-          });
         });
-      } catch (error) {
-        // If key terms cannot be read, do not highlight anything.
-      }
+      } catch (error) {}
 
       return phrases.sort(function(a, b) { return b.length - a.length; });
     }
 
+
+
+
     function buildKeywordHighlightRunsV146(textValue, phrases) {
-      const source = String(textValue || "");
-      const runs = [];
-      let remaining = source;
-
-      while (remaining.length > 0) {
-        let bestIndex = -1;
-        let bestPhrase = "";
-
-        (phrases || []).forEach(function(phrase) {
-          const idx = remaining.toLowerCase().indexOf(String(phrase).toLowerCase());
-          if (idx !== -1 && (bestIndex === -1 || idx < bestIndex || (idx === bestIndex && phrase.length > bestPhrase.length))) {
-            bestIndex = idx;
-            bestPhrase = phrase;
-          }
-        });
-
-        if (bestIndex === -1) {
-          runs.push({ text: remaining, options: { color: getSelectedReadableTextColourV148() } });
-          break;
-        }
-
-        if (bestIndex > 0) {
-          runs.push({ text: remaining.slice(0, bestIndex), options: { color: getSelectedReadableTextColourV148() } });
-        }
-
-        runs.push({
-          text: remaining.slice(bestIndex, bestIndex + bestPhrase.length),
-          options: { color: "000000", bold: true, highlight: "FFF2A8" }
-        });
-
-        remaining = remaining.slice(bestIndex + bestPhrase.length);
+      if (typeof buildYellowKeywordRunsV168 === "function") {
+        return buildYellowKeywordRunsV168(String(textValue || ""), phrases || getCheckAnswerKeywordPhrasesV168());
       }
-
-      return runs;
+      return [{ text: String(textValue || ""), options: { color: getSelectedReadableTextColourV148() } }];
     }
-
 
 
     function addImproveAnswerLayout(slide, lines) {
@@ -4407,6 +4438,18 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
         .trim();
     }
 
+
+    function buildFinalAnswerRichTextV171(textValue) {
+      const phrases = (typeof getCheckAnswerKeywordPhrasesV168 === "function")
+        ? getCheckAnswerKeywordPhrasesV168()
+        : [];
+      if (typeof buildYellowKeywordRunsV168 === "function") {
+        return buildYellowKeywordRunsV168(String(textValue || ""), phrases);
+      }
+      return [{ text: String(textValue || ""), options: { color: getSelectedReadableTextColourV148() } }];
+    }
+
+
     function addFinalCheckLayout(slide, lines) {
       const cleanLines = lines
         .map(function (line) { return line.replace(/^[-•*]\s*/, "").trim(); })
@@ -4439,7 +4482,7 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
         margin: 0
       });
 
-      slide.addText(answerText, {
+      slide.addText(buildFinalAnswerRichTextV171(answerText), {
         x: isIconsMode() ? 1.05 : 1.15,
         y: 1.95,
         w: isIconsMode() ? 9.70 : 10.95,

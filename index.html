@@ -1100,29 +1100,29 @@ Adaptive teaching prompts:
 Break objectives into small, manageable steps. Make success criteria explicit. Tell pupils what they should be able to do by the end and provide a concrete example of successful work where possible.`,
 
       "I Do": `Teaching notes:
-This I Do slide is designed so a cover teacher can deliver it directly. Read the first box aloud, then explain the second box in simple language. Pause after each point and check pupils are following.
+Use this slide to model the current lesson content from the parser. Read or explain the first point clearly, then think aloud so pupils can hear the expert reasoning. Keep the modelling concise and pause after each step to check understanding.
 
 Suggested delivery order:
-1. Say: “King Charles III is a constitutional monarch.”
-2. Explain that he does not run government or write laws, so his role is mostly symbolic, ceremonial and diplomatic.
-3. Compare this with Tsar Nicholas II, who had much more direct political power.
-4. Ask pupils: “Who had more real political power, and how do we know?” Take a few answers before moving on.
+1. Read the first current I Do point from the slide.
+2. Explain the idea in simple language using today's key vocabulary.
+3. Model how an expert would reason, select evidence, use a method, or form a clear answer.
+4. Ask one short check-for-understanding question before moving on.
 
 Adaptive teaching prompts:
-Keep the explanation short. Repeat the words constitutional monarch, symbolic and direct political power. If needed, rephrase in simpler language and ask pupils to answer in one sentence.`,
+Keep explanations in small steps. Reduce unnecessary wording. Highlight key vocabulary from today's lesson. If pupils struggle, rephrase the same idea more simply and ask for a one-sentence response.`,
 
       "We Do": `Teaching notes:
-This We Do slide is written so a cover teacher can lead it confidently. Read each numbered point as the expert model, then ask pupils to help complete the shared answer stems. Keep the pace calm and do not turn it into a debate.
+Use this slide for guided practice with the current parser content. Work through the points or questions with pupils rather than giving the answer immediately. Ask pupils to rehearse ideas, suggest next steps, correct errors or build a shared response.
 
 Suggested delivery order:
-1. State that King Charles III has symbolic power in a constitutional monarchy.
-2. State that Tsar Nicholas II had direct political power in an autocracy.
-3. Point out the similarity: both had royal status.
-4. Point out the key difference: their political systems gave them very different real power.
-5. Build the three sentence stems with the class.
+1. Read the current We Do task or prompt from the slide.
+2. Ask pupils to contribute one step, idea or answer part.
+3. Use questioning, MWBs, choral response or Think-Pair-Share to check broad understanding.
+4. Build or improve the shared answer with the class.
+5. Confirm the final version before pupils move into independent practice.
 
 Adaptive teaching prompts:
-Use the words symbolic power, direct political power, constitutional monarchy and autocracy. Pupils can answer orally first before writing.`,
+Keep the shared model visible. Use sentence stems, key words or partially completed examples where helpful. Give pupils oral rehearsal before writing. Maintain the same learning goal while adjusting the amount of scaffold.`,
 
       "You Do": `Teaching notes:
 Pupils now practise independently. The generated You Do slide uses an independent task card and a short self-check card so pupils know what quality work should include. Circulate, check work early and respond to misconceptions while pupils are still practising.
@@ -1436,6 +1436,13 @@ log('Lesson creation log sent to endpoint: ' + outputType + ' / ' + fileName);
       return best;
     }
 
+
+    function isSourceProvenanceLineV163(line) {
+      const clean = String(line || "").trim();
+      return /^(do\s+now\s+source\s+used|source\s+used|retrieval\s+source|prior\s+learning\s+source|previous\s+lesson|last\s+lesson|context)\s*[:\-–]/i.test(clean);
+    }
+
+
     function parseSALessonText(rawText) {
       const parsed = {};
       PARSE_SECTIONS.forEach(function (section) { parsed[section.id] = []; });
@@ -1446,6 +1453,12 @@ log('Lesson creation log sent to endpoint: ' + outputType + ' / ' + fileName);
       for (let i = 0; i < lines.length; i++) {
         const rawLine = lines[i];
         const trimmed = rawLine.trim();
+
+        if (isSourceProvenanceLineV163(trimmed)) {
+          log("Parser ignored source/provenance line: " + trimmed);
+          continue;
+        }
+
         const match = getHeadingMatch(trimmed);
 
         if (match) {
@@ -1554,6 +1567,35 @@ log('Lesson creation log sent to endpoint: ' + outputType + ' / ' + fileName);
     }
 
 
+
+    function moveExitTicketAnswerToFinalCheckV167() {
+      try {
+        const exitBox = document.getElementById("exitTicketText");
+        const finalBox = document.getElementById("finalCheckText");
+        if (!exitBox || !finalBox) return;
+
+        const lines = String(exitBox.value || "").split(/\r?\n/);
+        const answerLines = lines.filter(function(line) {
+          return /^(?:exit\s*ticket\s*)?answer\s*[:\-–]/i.test(String(line || "").trim());
+        });
+        const questionLines = lines.filter(function(line) {
+          return !/^(?:exit\s*ticket\s*)?answer\s*[:\-–]/i.test(String(line || "").trim());
+        });
+
+        if (answerLines.length > 0) {
+          exitBox.value = questionLines.join("\n").trim();
+          const finalCurrent = String(finalBox.value || "").trim();
+          if (!finalCurrent || /^\[No Final Check section detected/i.test(finalCurrent)) {
+            finalBox.value = answerLines.join("\n").trim();
+          }
+          if (typeof log === "function") log("Moved Exit Ticket answer to Final Check.");
+        }
+      } catch (error) {
+        if (typeof log === "function") log("Exit Ticket answer move failed: " + error.message);
+      }
+    }
+
+
     function populateFromSALesson(showAlert) {
       if (showAlert === undefined) showAlert = true;
       log("Populate boxes from SA lesson clicked.");
@@ -1594,6 +1636,7 @@ log('Lesson creation log sent to endpoint: ' + outputType + ' / ' + fileName);
       });
 
       log("Populate complete. Boxes populated: " + populated + ".");
+      moveExitTicketAnswerToFinalCheckV167();
       if (missing.length > 0) {
         log("Missing sections: " + missing.join(", "));
         if (showAlert) alert("Populated " + populated + " boxes. Missing sections have placeholders.");
@@ -1604,13 +1647,13 @@ log('Lesson creation log sent to endpoint: ' + outputType + ' / ' + fileName);
 
     function loadExampleLesson() {
       const example = `Title
-Crowns, Thrones and Power: King Charles III vs Tsar Nicholas II
+Crowns, Thrones and Power: King Charles III vs today’s lesson content
 
 Do Now
 Yes/No: A crown automatically means someone runs the country.
 MCQ: Which ruler had more direct political power?
 a) King Charles III
-b) Tsar Nicholas II
+b) today’s lesson content
 c) Larry the Downing Street Cat
 d) Whoever has the biggest hat
 Short answer: What does constitutional monarch mean?
@@ -1618,7 +1661,7 @@ Challenge: Can a monarch be useful even if they do not make laws?
 
 Do Now Review
 Q1: Does a crown automatically mean someone runs the country? Answer: No.
-Q2: Which ruler had more direct political power? Answer: Tsar Nicholas II.
+Q2: Which ruler had more direct political power? Answer: today’s lesson content.
 Q3: What is a constitutional monarch? Answer: A monarch whose role is limited by law, Parliament and convention.
 Q4: Can a monarch be useful without making laws? Answer: Yes, through symbolism, diplomacy, continuity and national identity.
 Misconception: Ceremonial does not mean pointless. Sometimes smiling politely is the job.
@@ -1641,11 +1684,11 @@ Explain how constitutional monarchy limits direct rule.
 Evaluate why a ceremonial monarch might still be useful.
 
 I Do
-King Charles III is a constitutional monarch.
+today’s lesson content.
 He does not run the government or write policy.
 His power is mostly symbolic, ceremonial and diplomatic: opening Parliament, meeting leaders and representing the country.
 That is why some people argue monarchy can still be useful: a royal handshake can do diplomatic work without starting a party-political argument.
-Tsar Nicholas II had much more direct power over government, law and the military.
+today’s lesson content had much more direct power over government, law and the military.
 In short: Charles has soft power; Nicholas had hard power. One hosts carefully staged meetings. The other could actually rule the empire.
 
 We Do
@@ -1658,7 +1701,7 @@ Why might a polite chat with a world leader be soft power rather than real law-m
 You Do
 Create a two-column comparison:
 King Charles III
-Tsar Nicholas II
+today’s lesson content
 
 For each, add:
 Source of authority
@@ -1672,21 +1715,21 @@ A constitutional monarch can/cannot still be useful because...
 
 Check Your Work
 King Charles III: authority comes from inheritance within a constitutional monarchy. His role is symbolic, ceremonial and diplomatic.
-Tsar Nicholas II: authority came from hereditary autocracy. He had far more direct political control.
+today’s lesson content: authority came from hereditary autocracy. He had far more direct political control.
 Useful comparison: both had crowns and status, but their real power was very different.
 Common error: saying Charles rules the UK in the same way Nicholas ruled Russia.
 
 Exam Question
-Compare the power of a constitutional monarch with the power of an autocratic ruler. In your answer, refer to King Charles III and Tsar Nicholas II. [6]
+Compare the power of a constitutional monarch with the power of an autocratic ruler. In your answer, refer to King Charles III and today’s lesson content. [6]
 
 Improve Your Answer
-A strong answer explains that King Charles III has symbolic and ceremonial power but limited direct political power because elected government runs the UK. He can still be useful through soft power, diplomacy, continuity and national representation. Tsar Nicholas II had far more direct political power because he ruled as an autocrat. The comparison shows that titles and crowns can look similar, but the actual political systems behind them are very different.
+A strong answer explains that King Charles III has symbolic and ceremonial power but limited direct political power because elected government runs the UK. He can still be useful through soft power, diplomacy, continuity and national representation. today’s lesson content had far more direct political power because he ruled as an autocrat. The comparison shows that titles and crowns can look similar, but the actual political systems behind them are very different.
 
 Exit Ticket
-In one sentence, explain why King Charles III can be useful without having the same power as Tsar Nicholas II.
+In one sentence, explain why King Charles III can be useful without having the same power as today’s lesson content.
 
 Final Check
-King Charles III can be useful through symbolic leadership, diplomacy and soft power, while Tsar Nicholas II had direct autocratic power. The key difference is influence versus rule.`;
+King Charles III can be useful through symbolic leadership, diplomacy and soft power, while today’s lesson content had direct autocratic power. The key difference is influence versus rule.`;
 
       document.getElementById("saLessonText").value = example;
       document.getElementById("outputFileName").dataset.userEdited = "false";
@@ -2150,7 +2193,7 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
 
     function isDoNowContextLineV157(line) {
       const clean = String(line || "").trim();
-      return /^(previous\s+lesson|prior\s+learning|retrieval\s+source|context|last\s+lesson|recap\s+from|based\s+on)\b/i.test(clean);
+      return /^(do\s+now\s+source\s+used|source\s+used|previous\s+lesson|prior\s+learning|retrieval\s+source|prior\s+learning\s+source|context|last\s+lesson|recap\s+from|based\s+on)\b/i.test(clean);
     }
 
     function isMcqOptionLineV156(line) {
@@ -2431,6 +2474,7 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
 
 
 
+
     function addDoNowCards(slide, lines) {
       const items = buildDoNowItemsWithMcqOptionsV156(lines);
       const fallbackItems = items.length > 0 ? items : [
@@ -2440,7 +2484,17 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
         { question: "Add Do Now question 4.", options: [] }
       ];
 
-      const positions = isIconsMode() ? [
+      const hasLongText = fallbackItems.some(function(item) {
+        return (item.question || "").length > 58 || (item.options || []).join(" ").length > 40;
+      });
+
+      // Long mode gives the questions much more horizontal space.
+      const positions = hasLongText ? [
+        { x: 0.95, y: 1.36, w: 4.85, h: 1.28 },
+        { x: 5.65, y: 1.36, w: 5.05, h: 1.28 },
+        { x: 0.95, y: 3.10, w: 4.85, h: 1.28 },
+        { x: 5.65, y: 3.10, w: 5.05, h: 1.28 }
+      ] : (isIconsMode() ? [
         { x: 1.02, y: 1.48, w: 4.22, h: 1.24 },
         { x: 5.52, y: 1.48, w: 4.22, h: 1.24 },
         { x: 1.02, y: 3.10, w: 4.22, h: 1.24 },
@@ -2450,16 +2504,17 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
         { x: 6.72, y: 1.45, w: 5.55, h: 1.24 },
         { x: 0.95, y: 3.10, w: 5.55, h: 1.24 },
         { x: 6.72, y: 3.10, w: 5.55, h: 1.24 }
-      ];
+      ]);
 
       fallbackItems.slice(0, 4).forEach(function(item, index) {
         const pos = positions[index];
         const hasOptions = item.options && item.options.length > 0;
+        const qFont = hasLongText ? 20 : 22;
 
         slide.addText(String(index + 1) + ".", {
           x: pos.x,
           y: pos.y + 0.03,
-          w: 0.40,
+          w: 0.38,
           h: 0.24,
           fontFace: "Aptos",
           fontSize: 15,
@@ -2473,9 +2528,9 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
           x: pos.x + 0.42,
           y: pos.y,
           w: pos.w - 0.45,
-          h: hasOptions ? 0.62 : 0.96,
+          h: hasOptions ? 0.70 : 1.04,
           fontFace: "Aptos",
-          fontSize: 22,
+          fontSize: qFont,
           bold: false,
           color: getSelectedReadableTextColourV148(),
           fit: "shrink",
@@ -2487,9 +2542,9 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
         if (hasOptions) {
           slide.addText(buildInlineMcqOptionsTextV156(item.options), {
             x: pos.x + 0.42,
-            y: pos.y + 0.72,
+            y: pos.y + 0.78,
             w: pos.w - 0.45,
-            h: 0.38,
+            h: 0.42,
             fontFace: "Aptos",
             fontSize: 18,
             bold: false,
@@ -3772,46 +3827,153 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
 
 
 
+
+    function getCheckAnswerKeywordPhrasesV168() {
+      const phrases = [];
+      try {
+        const keyBox = document.getElementById("keyTermsText");
+        if (!keyBox) return phrases;
+
+        keyBox.value.split(/\r?\n/).forEach(function(line) {
+          const clean = String(line || "").trim();
+          if (!clean) return;
+
+          let term = clean;
+          const split = (typeof splitKeyTermLineV155 === "function")
+            ? splitKeyTermLineV155(clean)
+            : null;
+
+          if (split && split.term) {
+            term = split.term.trim();
+          } else {
+            const match = clean.match(/^(.+?)(?:\s*[:\-–—=]\s*.+)$/);
+            term = match ? match[1].trim() : clean;
+          }
+
+          if (term && !phrases.some(function(existing) { return existing.toLowerCase() === term.toLowerCase(); })) {
+            phrases.push(term);
+          }
+
+          // Also allow single-word parts of compound terms to highlight.
+          term.split(/\s+/).forEach(function(word) {
+            const w = word.replace(/[^A-Za-z0-9’']/g, "").trim();
+            if (w.length >= 4 && !/^(with|from|into|your|this|that|work|file|used|using)$/i.test(w)) {
+              if (!phrases.some(function(existing) { return existing.toLowerCase() === w.toLowerCase(); })) {
+                phrases.push(w);
+              }
+            }
+          });
+        });
+      } catch (error) {
+        // If keywords cannot be read, just return no phrases.
+      }
+
+      return phrases.sort(function(a, b) { return b.length - a.length; });
+    }
+
+    function buildYellowKeywordRunsV168(textValue, phrases) {
+      const source = String(textValue || "");
+      const runs = [];
+      let remaining = source;
+
+      while (remaining.length > 0) {
+        let bestIndex = -1;
+        let bestPhrase = "";
+
+        (phrases || []).forEach(function(phrase) {
+          if (!phrase) return;
+          const idx = remaining.toLowerCase().indexOf(String(phrase).toLowerCase());
+          if (idx !== -1 && (bestIndex === -1 || idx < bestIndex || (idx === bestIndex && phrase.length > bestPhrase.length))) {
+            bestIndex = idx;
+            bestPhrase = phrase;
+          }
+        });
+
+        if (bestIndex === -1) {
+          runs.push({ text: remaining, options: { color: getSelectedReadableTextColourV148() } });
+          break;
+        }
+
+        if (bestIndex > 0) {
+          runs.push({ text: remaining.slice(0, bestIndex), options: { color: getSelectedReadableTextColourV148() } });
+        }
+
+        runs.push({
+          text: remaining.slice(bestIndex, bestIndex + bestPhrase.length),
+          options: {
+            color: "000000",
+            bold: true,
+            highlight: "FFF2A8"
+          }
+        });
+
+        remaining = remaining.slice(bestIndex + bestPhrase.length);
+      }
+
+      return runs;
+    }
+
+    function buildCheckAnswerRichTextV168(lines) {
+      const phrases = getCheckAnswerKeywordPhrasesV168();
+      const richText = [];
+      (lines || []).forEach(function(line, index) {
+        buildYellowKeywordRunsV168(line, phrases).forEach(function(run) {
+          richText.push(run);
+        });
+        if (index < lines.length - 1) {
+          richText.push({ text: "\n\n", options: { breakLine: true, color: getSelectedReadableTextColourV148() } });
+        }
+      });
+      return richText;
+    }
+
+
+
     function addCheckYourWorkLayout(slide, lines) {
-      const cleanLines = lines
-        .map(function (line) { return line.replace(/^[-•*]\s*/, "").trim(); })
+      const cleanLines = (lines || [])
+        .map(function (line) { return String(line || "").replace(/^[-•*]\s*/, "").trim(); })
         .filter(function (line) { return line.length > 0; });
 
-      const answerLines = cleanLines.length > 0
-        ? cleanLines.slice(0, 6)
-        : ["Check your answers against the worked method.", "Correct one mistake if needed.", "Be ready to explain one correction."];
+      const answers = cleanLines.length > 0
+        ? cleanLines
+        : ["Add the check-your-work answers here."];
+
+      slide.addShape("roundRect", {
+        x: 0.75,
+        y: 1.12,
+        w: isIconsMode() ? 10.35 : 11.85,
+        h: 4.7,
+        rectRadius: 0.14,
+        fill: { color: getSelectedMajorPanelFillV148("EAF1F8") },
+        line: { color: getSelectedLineColourV152 ? getSelectedLineColourV152() : "000000", width: 0, transparency: 100 }
+      });
 
       slide.addText("Check your answers", {
-        x: 0.82,
-        y: 1.28,
-        w: isIconsMode() ? 9.30 : 11.10,
-        h: 0.42,
-        fontFace: themeFont(),
-        fontSize: isIconsMode() ? 28 : 25,
+        x: isIconsMode() ? 1.05 : 1.15,
+        y: 1.30,
+        w: isIconsMode() ? 9.55 : 10.85,
+        h: 0.45,
+        fontFace: "Aptos",
+        fontSize: 28,
         bold: true,
         color: getSelectedReadableTextColourV148(),
         fit: "shrink",
         margin: 0
       });
 
-      const startX = 0.82;
-      const startY = 1.95;
-      const rowW = isIconsMode() ? 9.40 : 11.00;
-
-      slide.addText(answerLines.join("\n\n"), {
-        x: startX,
-        y: startY,
-        w: rowW,
-        h: 4.55,
+      slide.addText(buildCheckAnswerRichTextV168(answers), {
+        x: isIconsMode() ? 1.05 : 1.15,
+        y: 2.02,
+        w: isIconsMode() ? 9.55 : 10.85,
+        h: 3.10,
         fontFace: "Aptos",
-        fontSize: 24,
+        fontSize: answers.length > 5 ? 20 : 23,
         bold: false,
         color: getSelectedReadableTextColourV148(),
         fit: "shrink",
         valign: "top",
-        margin: 0,
-        breakLine: true,
-        paraSpaceAfterPt: 10
+        margin: 0.02,
+        breakLine: false
       });
     }
 
@@ -4179,11 +4341,18 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
     }
 
 
+
+    function cleanExitTicketQuestionLinesV167(lines) {
+      return (lines || [])
+        .map(function(line) { return String(line || "").replace(/^[-•*]\s*/, "").trim(); })
+        .filter(function(line) { return line.length > 0; })
+        .filter(function(line) {
+          return !/^(?:exit\s*ticket\s*)?answer\s*[:\-–]/i.test(line);
+        });
+    }
+
     function addExitTicketLayout(slide, lines) {
-      const cleanLines = lines
-        .map(function (line) { return line.replace(/^[-•*]\s*/, "").trim(); })
-        .filter(function (line) { return line.length > 0; })
-        .slice(0, 4);
+      const cleanLines = cleanExitTicketQuestionLinesV167(lines).slice(0, 4);
 
       const questions = cleanLines.length > 0
         ? cleanLines
@@ -4301,12 +4470,12 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
       const hmg = isHMGTodayMode();
 
       slide.addText(headerText, {
-        x: isIconsMode() ? 1.78 : 0.45,
-        y: isIconsMode() ? 0.08 : 0.60,
-        w: isIconsMode() ? 8.35 : (hmg ? 7.55 : (hasSpec ? 8.95 : 12.35)),
-        h: isIconsMode() ? 0.62 : 0.38,
+        x: isIconsMode() ? 1.75 : 0.45,
+        y: isIconsMode() ? 0.12 : 0.60,
+        w: isIconsMode() ? 8.70 : (hmg ? 7.55 : (hasSpec ? 8.95 : 12.35)),
+        h: isIconsMode() ? 0.52 : 0.38,
         fontFace: themeFont(),
-        fontSize: isIconsMode() ? 22 : (hmg ? 17 : 18),
+        fontSize: isIconsMode() ? 21 : (hmg ? 17 : 18),
         color: getSelectedReadableTextColourV148(),
         bold: true,
         underline: isIconsMode(),

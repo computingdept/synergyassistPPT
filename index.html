@@ -2146,6 +2146,61 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
         .trim();
     }
 
+
+
+    function isDoNowContextLineV157(line) {
+      const clean = String(line || "").trim();
+      return /^(previous\s+lesson|prior\s+learning|retrieval\s+source|context|last\s+lesson|recap\s+from|based\s+on)\b/i.test(clean);
+    }
+
+    function isMcqOptionLineV156(line) {
+      return /^[a-d]\)\s+/i.test(String(line || "").trim());
+    }
+
+    function cleanDoNowQuestionLabelV156(line) {
+      return String(line || "")
+        .replace(/^\s*(Yes\/No|MCQ|Short answer|Challenge)\s*:\s*/i, "")
+        .replace(/^\s*Q\s*\d+\s*[:.)-]\s*/i, "")
+        .trim();
+    }
+
+    function buildDoNowItemsWithMcqOptionsV156(lines) {
+      const items = [];
+      const clean = (lines || [])
+        .map(function(line) { return String(line || "").trim(); })
+        .filter(function(line) { return line.length > 0; })
+        .filter(function(line) { return !isDoNowContextLineV157(line); });
+
+      for (let i = 0; i < clean.length; i++) {
+        const line = clean[i];
+
+        if (isMcqOptionLineV156(line)) {
+          continue;
+        }
+
+        const item = {
+          question: cleanDoNowQuestionLabelV156(line),
+          options: []
+        };
+
+        let j = i + 1;
+        while (j < clean.length && isMcqOptionLineV156(clean[j])) {
+          item.options.push(clean[j].trim());
+          j++;
+        }
+
+        items.push(item);
+        i = j - 1;
+      }
+
+      return items.slice(0, 4);
+    }
+
+    function buildInlineMcqOptionsTextV156(options) {
+      return (options || []).join("     ");
+    }
+
+
     function addIconsModeDoNowQuestion(slide, item, index, includeAnswer) {
       if (!includeAnswer) {
         const l = getDoNowIconLayout(index);
@@ -2263,38 +2318,17 @@ King Charles III can be useful through symbolic leadership, diplomacy and soft p
       });
     }
 
+
     function parseKeyTermEntries(lines) {
-      const entries = [];
-      (lines || []).forEach(function(rawLine) {
-        const line = String(rawLine || "").trim();
-        if (!line) return;
-
-        let term = "";
-        let definition = "";
-
-        const dashMatch = line.match(/^(.+?)\s+(?:-|–|—)\s+(.+)$/);
-        const colonMatch = line.match(/^(.+?)\s*:\s+(.+)$/);
-        const equalsMatch = line.match(/^(.+?)\s*=\s+(.+)$/);
-
-        if (dashMatch) {
-          term = dashMatch[1].trim();
-          definition = dashMatch[2].trim();
-        } else if (colonMatch) {
-          term = colonMatch[1].trim();
-          definition = colonMatch[2].trim();
-        } else if (equalsMatch) {
-          term = equalsMatch[1].trim();
-          definition = equalsMatch[2].trim();
-        } else {
-          const parts = line.split(/\s{2,}/);
-          term = parts[0] || line;
-          definition = parts.slice(1).join(" ");
-        }
-
-        if (term) entries.push({ term: term, definition: definition });
-      });
-      return entries;
+      return (lines || [])
+        .map(function (line) { return splitKeyTermLineV155(line); })
+        .filter(function (item) { return item.term.length > 0; })
+        .map(function (item) {
+          return { term: item.term, definition: item.definition };
+        });
     }
+
+
 
     function makeSenDefinition(def) {
       const clean = String(def || "").trim();
@@ -2339,8 +2373,8 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
         });
 
         const startY = 1.78;
-        const rowH = 1.08;
-        const gap = 0.32;
+        const rowH = 1.18;
+        const gap = 0.24;
 
         chunk.forEach(function(entry, i) {
           const y = startY + i * (rowH + gap);
@@ -2363,7 +2397,7 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
             w: 2.17,
             h: routineTextH || 0.58,
             fontFace: "Aptos",
-            fontSize: term.length > 18 ? 17 : 20,
+            fontSize: term.length > 18 ? 15 : 20,
             bold: true,
             color: "000000",
             align: "center",
@@ -2396,180 +2430,77 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
     }
 
 
+
     function addDoNowCards(slide, lines) {
-      const items = buildDoNowItems(lines);
+      const items = buildDoNowItemsWithMcqOptionsV156(lines);
+      const fallbackItems = items.length > 0 ? items : [
+        { question: "Add Do Now question 1.", options: [] },
+        { question: "Add Do Now question 2.", options: [] },
+        { question: "Add Do Now question 3.", options: [] },
+        { question: "Add Do Now question 4.", options: [] }
+      ];
 
-      if (items.length === 0) {
-        slide.addText("Add retrieval questions here.", {
-          x: 1.15,
-          y: 2.4,
-          w: 10.8,
-          h: 0.5,
-          fontFace: themeFont(),
-          fontSize: 20,
-          color: getSelectedReadableTextColourV148()
-        });
-        return;
-      }
+      const positions = isIconsMode() ? [
+        { x: 1.02, y: 1.48, w: 4.22, h: 1.24 },
+        { x: 5.52, y: 1.48, w: 4.22, h: 1.24 },
+        { x: 1.02, y: 3.10, w: 4.22, h: 1.24 },
+        { x: 5.52, y: 3.10, w: 4.22, h: 1.24 }
+      ] : [
+        { x: 0.95, y: 1.45, w: 5.55, h: 1.24 },
+        { x: 6.72, y: 1.45, w: 5.55, h: 1.24 },
+        { x: 0.95, y: 3.10, w: 5.55, h: 1.24 },
+        { x: 6.72, y: 3.10, w: 5.55, h: 1.24 }
+      ];
 
-      // 2 x 2 grid. Text is deliberately larger for classroom display.
-      const visibleItems = items.slice(0, 4);
-      const extraCount = Math.max(0, items.length - visibleItems.length);
+      fallbackItems.slice(0, 4).forEach(function(item, index) {
+        const pos = positions[index];
+        const hasOptions = item.options && item.options.length > 0;
 
-      if (isIconsMode()) {
-        visibleItems.forEach(function (item, index) {
-          addIconsModeDoNowQuestion(slide, item, index, false);
-        });
-        return;
-      }
-
-      const startX = isIconsMode() ? 0.72 : 0.65;
-      const startY = isIconsMode() ? 1.18 : 1.00;
-      const colGap = isIconsMode() ? 0.22 : 0.22;
-      const rowGap = isIconsMode() ? 0.14 : 0.18;
-      const cardW = isIconsMode() ? 4.68 : 5.95;
-      const cardH = isIconsMode() ? 2.00 : 2.28;
-
-      // Icons mode uses the single main content frame added by addLessonSlide.
-      // Do not add a second Do Now frame here; it creates a doubled outside border in PowerPoint.
-
-      visibleItems.forEach(function (item, index) {
-        const col = index % 2;
-        const row = Math.floor(index / 2);
-        const x = startX + col * (cardW + colGap);
-        const y = startY + row * (cardH + rowGap);
-        const isMcq = String(item.type || "").toLowerCase().includes("mcq") || String(item.type || "").toLowerCase().includes("multiple choice");
-
-        if (!isIconsMode()) {
-          slide.addShape("roundRect", {
-            x: x,
-            y: y,
-            w: cardW,
-            h: cardH,
-            rectRadius: 0.12,
-            fill: { color: getSelectedMajorPanelFillV148("EAF1F8") },
-            line: { color: getSelectedReadableTextColourV148(), width: 0, transparency: 100 }
-          });
-        }
-
-        const labelX = isIconsMode() ? x + 0.10 : x + 0.18;
-        const labelY = isIconsMode() ? y + 0.02 : y + 0.14;
-        const labelW = isIconsMode() ? 1.00 : 1.55;
-        const labelH = isIconsMode() ? 0.18 : 0.40;
-        const labelFont = isIconsMode() ? 7.2 : 13.5;
-
-        slide.addShape("roundRect", {
-          x: labelX,
-          y: labelY,
-          w: labelW,
-          h: labelH,
-          rectRadius: 0.06,
-          fill: { color: getSelectedMajorPanelFillV148("EAF1F8") },
-          line: { color: getSelectedReadableTextColourV148(), width: 0, transparency: 100 }
-        });
-
-        slide.addText(item.type, {
-          x: labelX + 0.04,
-          y: labelY + (isIconsMode() ? 0.032 : 0.075),
-          w: labelW - 0.08,
-          h: isIconsMode() ? 0.10 : 0.18,
-          fontFace: themeFont(),
-          fontSize: labelFont,
-          bold: !isIconsMode(),
+        slide.addText(String(index + 1) + ".", {
+          x: pos.x,
+          y: pos.y + 0.03,
+          w: 0.40,
+          h: 0.24,
+          fontFace: "Aptos",
+          fontSize: 15,
+          bold: false,
           color: getSelectedReadableTextColourV148(),
           fit: "shrink",
-          align: "center",
           margin: 0
         });
 
-        if (isMcq) {
-          const mcq = splitMcqText(item.text);
-          const question = mcq.question || item.text;
+        slide.addText(item.question, {
+          x: pos.x + 0.42,
+          y: pos.y,
+          w: pos.w - 0.45,
+          h: hasOptions ? 0.62 : 0.96,
+          fontFace: "Aptos",
+          fontSize: 22,
+          bold: false,
+          color: getSelectedReadableTextColourV148(),
+          fit: "shrink",
+          valign: "top",
+          margin: 0.01,
+          breakLine: true
+        });
 
-          slide.addText(question, {
-            x: isIconsMode() ? x + 0.10 : x + 0.25,
-            y: isIconsMode() ? y + 0.28 : y + 0.62,
-            w: isIconsMode() ? cardW - 0.12 : cardW - 0.50,
-            h: isIconsMode() ? 0.58 : (isHMGTodayMode() ? 0.54 : 0.72),
-            fontFace: themeFont(),
-            fontSize: isIconsMode() ? 19 : (isHMGTodayMode() ? 18 : 20),
+        if (hasOptions) {
+          slide.addText(buildInlineMcqOptionsTextV156(item.options), {
+            x: pos.x + 0.42,
+            y: pos.y + 0.72,
+            w: pos.w - 0.45,
+            h: 0.38,
+            fontFace: "Aptos",
+            fontSize: 18,
+            bold: false,
             color: getSelectedReadableTextColourV148(),
             fit: "shrink",
             valign: "top",
-            margin: 0.02,
-            breakLine: true
-          });
-
-          const optionLines = mcq.options.slice(0, 4);
-          if (optionLines.length > 0) {
-            if (isHMGTodayMode()) {
-              // HMGToday: keep MCQ answers close to the question in a compact 2 x 2 grid.
-              const optionTopY = y + 1.16;
-              const optionColW = 2.48;
-              const optionRowH = 0.30;
-              const optionGapX = 0.20;
-              const optionGapY = 0.06;
-
-              optionLines.forEach(function (option, optionIndex) {
-                const optionCol = optionIndex % 2;
-                const optionRow = Math.floor(optionIndex / 2);
-                slide.addText(option, {
-                  x: x + 0.27 + optionCol * (optionColW + optionGapX),
-                  y: optionTopY + optionRow * (optionRowH + optionGapY),
-                  w: optionColW,
-                  h: optionRowH,
-                  fontFace: themeFont(),
-                  fontSize: 13.5,
-                  bold: true,
-                  color: getSelectedReadableTextColourV148(),
-                  fit: "shrink",
-                  valign: "mid",
-                  margin: 0
-                });
-              });
-            } else {
-              const optionTopY = isIconsMode() ? y + 0.88 : y + 1.42;
-              const optionColW = isIconsMode() ? 2.35 : 2.70;
-              const optionRowH = isIconsMode() ? 0.30 : 0.40;
-              const optionGapX = isIconsMode() ? 0.25 : 0.30;
-              const optionGapY = isIconsMode() ? 0.05 : 0.08;
-
-              optionLines.forEach(function (option, optionIndex) {
-                const optionCol = optionIndex % 2;
-                const optionRow = Math.floor(optionIndex / 2);
-                slide.addText(option, {
-                  x: (isIconsMode() ? x + 0.10 : x + 0.25) + optionCol * (optionColW + optionGapX),
-                  y: optionTopY + optionRow * (optionRowH + optionGapY),
-                  w: optionColW,
-                  h: optionRowH,
-                  fontFace: themeFont(),
-                  fontSize: isIconsMode() ? 13.5 : 20,
-                  bold: false,
-                  color: getSelectedReadableTextColourV148(),
-                  fit: "shrink",
-                  valign: "mid",
-                  margin: 0
-                });
-              });
-            }
-          }
-        } else {
-          slide.addText(item.text, {
-            x: isIconsMode() ? x + 0.10 : x + 0.25,
-            y: isIconsMode() ? y + 0.28 : y + 0.65,
-            w: isIconsMode() ? cardW - 0.12 : cardW - 0.50,
-            h: isIconsMode() ? cardH - 0.40 : cardH - 0.82,
-            fontFace: themeFont(),
-            fontSize: isIconsMode() ? 19 : 20,
-            color: getSelectedReadableTextColourV148(),
-            fit: "shrink",
-            valign: "top",
-            margin: 0.03,
-            breakLine: true
+            margin: 0.01,
+            breakLine: false
           });
         }
       });
-
     }
 
 
@@ -2822,23 +2753,40 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
 
 
 
-    function buildKeyTermItems(lines) {
-      return lines.map(function (line) {
-        const colonIndex = line.indexOf(":");
-        if (colonIndex !== -1) {
-          return {
-            term: line.slice(0, colonIndex).trim(),
-            definition: line.slice(colonIndex + 1).trim()
-          };
-        }
+
+    function splitKeyTermLineV155(line) {
+      const clean = String(line || "")
+        .replace(/^[-•*]\s*/, "")
+        .trim();
+
+      if (!clean) return { term: "", definition: "" };
+
+      // Split on the first clear separator only.
+      // Supports en dash, em dash, hyphen, colon and equals.
+      const match = clean.match(/^(.+?)\s*(?:–|—|-|:|=)\s*(.+)$/);
+
+      if (match && match[1] && match[2]) {
         return {
-          term: line.trim(),
-          definition: ""
+          term: match[1].trim(),
+          definition: match[2].trim().replace(/\s+$/g, "")
         };
-      }).filter(function (item) {
-        return item.term.length > 0 || item.definition.length > 0;
-      });
+      }
+
+      return {
+        term: clean,
+        definition: "Add definition."
+      };
     }
+
+
+
+    function buildKeyTermItems(lines) {
+      return (lines || [])
+        .map(function (line) { return splitKeyTermLineV155(line); })
+        .filter(function (item) { return item.term.length > 0; });
+    }
+
+
 
     function addKeyTermsYellowBox(slide, lines) {
       const hmgTodayKeyVocabChallenge = "Pick one keyword and be ready to use it correctly in a sentence.";
@@ -3518,96 +3466,13 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
 
 
     function addIDoStepCards(slide, lines) {
-      const steps = lines
-        .map(function (line) { return line.replace(/^[-•*]\s*/, "").trim(); })
-        .filter(function (line) { return line.length > 0; })
-        .slice(0, 5);
+      const content = (lines || [])
+        .map(function (line) { return String(line || "").replace(/^[-•*]\s*/, "").trim(); })
+        .filter(function (line) { return line.length > 0; });
 
-      const modelSteps = steps.length > 0
-        ? steps
-        : ["Watch the teacher model the first step.", "Listen for the thinking behind the decision.", "Be ready to explain the method."];
-
-      if (isHMGTodayMode()) {
-        const model = modelSteps[0] || "King Charles III is a constitutional monarch.";
-        const thinkAloud = modelSteps.slice(1, 3).join(" ") || "He does not run the government or write laws. His power is mostly symbolic and ceremonial.";
-        const watchFor = modelSteps.find(function (step) { return /Tsar|Nicholas|autocrat|direct power/i.test(step); }) || modelSteps[4] || "Tsar Nicholas II had much more direct political power.";
-        const quickCheck = "Who had more real political power, and how do we know?";
-
-        slide.addShape("roundRect", {
-          x: 0.75,
-          y: 1.06,
-          w: isIconsMode() ? 10.35 : 11.85,
-          h: 5.08,
-          rectRadius: 0.14,
-          fill: { color: getSelectedMajorPanelFillV148("EAF1F8") },
-          line: { color: getSelectedReadableTextColourV148(), width: 0, transparency: 100 }
-        });
-
-        const panels = isIconsMode() ? [
-          { label: "1", text: model, x: 1.00, y: 1.42, w: 4.75, h: 1.75 },
-          { label: "2", text: thinkAloud, x: 5.85, y: 1.42, w: 4.75, h: 1.75 },
-          { label: "3", text: watchFor, x: 1.00, y: 3.42, w: 4.75, h: 1.75 },
-          { label: "4", text: quickCheck, x: 5.85, y: 3.42, w: 4.75, h: 1.75 }
-        ] : [
-          { label: "1", text: model, x: 1.00, y: 1.42, w: 5.70, h: 1.75 },
-          { label: "2", text: thinkAloud, x: 6.85, y: 1.42, w: 5.10, h: 1.75 },
-          { label: "3", text: watchFor, x: 1.00, y: 3.42, w: 5.70, h: 1.75 },
-          { label: "4", text: quickCheck, x: 6.85, y: 3.42, w: 5.10, h: 1.75 }
-        ];
-
-        panels.forEach(function (panel) {
-          slide.addShape("roundRect", {
-            x: panel.x,
-            y: panel.y,
-            w: panel.w,
-            h: panel.h,
-            rectRadius: 0.10,
-            fill: { color: getSelectedMajorPanelFillV148("EAF1F8") },
-            line: { color: themeColor("F2F4F4"), width: 0, transparency: 100 }
-          });
-
-          slide.addShape("roundRect", {
-            x: panel.x + 0.22,
-            y: panel.y + 0.18,
-            w: 0.42,
-            h: 0.30,
-            rectRadius: 0.07,
-            fill: { color: getSelectedMajorPanelFillV148("EAF1F8") },
-            line: { color: getSelectedReadableTextColourV148(), width: 0, transparency: 100 }
-          });
-
-          slide.addText(panel.label, {
-            x: panel.x + 0.30,
-            y: panel.y + 0.24,
-            w: 0.28,
-            h: 0.12,
-            fontFace: "Aptos",
-            fontSize: 11,
-            bold: true,
-            color: getSelectedReadableTextColourV148(),
-            align: "center",
-            margin: 0,
-            fit: "shrink"
-          });
-
-          slide.addText(panel.text, {
-            x: panel.x + 0.25,
-            y: panel.y + 0.58,
-            w: panel.w - 0.50,
-            h: panel.h - 0.68,
-            fontFace: "Aptos",
-            fontSize: 22,
-            bold: false,
-            color: getSelectedReadableTextColourV148(),
-            fit: "shrink",
-            valign: "top",
-            margin: 0.02,
-            breakLine: true
-          });
-        });
-
-        return;
-      }
+      const modelSteps = content.length > 0
+        ? content
+        : ["Add I Do modelling content here."];
 
       slide.addShape("roundRect", {
         x: 0.75,
@@ -3616,208 +3481,120 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
         h: 4.7,
         rectRadius: 0.14,
         fill: { color: getSelectedMajorPanelFillV148("EAF1F8") },
-        line: { color: getSelectedReadableTextColourV148(), width: 0, transparency: 100 }
+        line: { color: getSelectedLineColourV152 ? getSelectedLineColourV152() : "000000", width: 0, transparency: 100 }
       });
 
-      const startY = 1.48;
-      const cardH = modelSteps.length <= 4 ? 0.76 : 0.64;
-      const gap = modelSteps.length <= 4 ? 0.18 : 0.13;
+      const richText = modelSteps.map(function (line) {
+        return { text: line, options: { bullet: { type: "bullet" }, breakLine: true } };
+      });
 
-      modelSteps.forEach(function (step, index) {
-        const y = startY + index * (cardH + gap);
-
-        slide.addShape("roundRect", {
-          x: 1.05,
-          y: y,
-          w: isIconsMode() ? 9.65 : 10.95,
-          h: cardH,
-          rectRadius: 0.1,
-          fill: { color: getSelectedMajorPanelFillV148("EAF1F8") },
-          line: { color: themeColor("F2F4F4"), width: 0, transparency: 100 }
-        });
-
-        slide.addShape("ellipse", {
-          x: 1.28,
-          y: y + 0.14,
-          w: 0.38,
-          h: 0.38,
-          fill: { color: getSelectedReadableTextColourV148() },
-          line: { color: getSelectedReadableTextColourV148(), width: 0, transparency: 100 }
-        });
-
-        slide.addText(String(index + 1), {
-          x: 1.28,
-          y: y + 0.215,
-          w: 0.38,
-          h: 0.12,
-          fontFace: themeFont(),
-          fontSize: 10,
-          bold: true,
-          color: themeColor("FFFFFF"),
-          align: "center",
-          margin: 0
-        });
-
-        slide.addText(step, {
-          x: 1.78,
-          y: y + 0.13,
-          w: isIconsMode() ? 8.64 : 9.95,
-          h: cardH - 0.18,
-          fontFace: themeFont(),
-          fontSize: 18,
-          color: getSelectedReadableTextColourV148(),
-          fit: "shrink",
-          valign: "mid",
-          margin: 0.02,
-          breakLine: true
-        });
+      slide.addText(richText, {
+        x: isIconsMode() ? 1.08 : 1.18,
+        y: 1.50,
+        w: isIconsMode() ? 9.42 : 10.95,
+        h: 3.60,
+        fontFace: "Aptos",
+        fontSize: modelSteps.length > 5 ? 20 : 23,
+        bold: false,
+        color: getSelectedReadableTextColourV148(),
+        fit: "shrink",
+        valign: "top",
+        paraSpaceAfterPt: 8,
+        margin: 0.02
       });
     }
 
 
-
+    
     function addWeDoGuidedLayout(slide, lines) {
-      const cleanLines = lines
-        .map(function (line) { return line.replace(/^[-•*]\s*/, "").trim(); })
+      const cleanLines = (lines || [])
+        .map(function (line) { return String(line || "").replace(/^[-•*]\s*/, "").trim(); })
         .filter(function (line) { return line.length > 0; });
 
-      const focus = cleanLines.length > 0
-        ? cleanLines[0]
-        : "Complete the shared example together.";
+      const content = cleanLines.length > 0
+        ? cleanLines
+        : ["Add We Do guided practice content here."];
 
-      const prompts = cleanLines.length > 1
-        ? cleanLines.slice(1, 5)
-        : ["Suggest the next step.", "Check the method.", "Explain the reasoning.", "Improve the answer together."];
+      slide.addShape("roundRect", {
+        x: 0.75,
+        y: 1.12,
+        w: isIconsMode() ? 10.35 : 11.85,
+        h: 4.7,
+        rectRadius: 0.14,
+        fill: { color: getSelectedMajorPanelFillV148("EAF1F8") },
+        line: { color: getSelectedLineColourV152 ? getSelectedLineColourV152() : "000000", width: 0, transparency: 100 }
+      });
 
-      if (isHMGTodayMode()) {
-        const promptItems = [
-          { number: "1", text: "King Charles III has symbolic power in a constitutional monarchy." },
-          { number: "2", text: "Tsar Nicholas II had direct political power in an autocracy." },
-          { number: "3", text: "Both rulers had royal status and inherited their position." },
-          { number: "4", text: "Their real power was different because their political systems were different." }
+      const useGrid = content.length >= 2 && content.length <= 4 && content.every(function(line) {
+        return line.length <= 110;
+      });
+
+      if (useGrid) {
+        const positions = [
+          { x: 1.05, y: 1.42 },
+          { x: isIconsMode() ? 5.60 : 6.40, y: 1.42 },
+          { x: 1.05, y: 3.00 },
+          { x: isIconsMode() ? 5.60 : 6.40, y: 3.00 }
         ];
+        const cardW = isIconsMode() ? 4.30 : 5.10;
+        const cardH = 1.26;
 
-        const cardX1 = 1.05;
-        const cardX2 = isIconsMode() ? 5.60 : 6.50;
-        const cardW = isIconsMode() ? 4.25 : 5.05;
-        const cardH = 1.36;
-        const cardY1 = 1.34;
-        const cardY2 = 2.92;
-        const cards = [
-          { x: cardX1, y: cardY1, item: promptItems[0] },
-          { x: cardX2, y: cardY1, item: promptItems[1] },
-          { x: cardX1, y: cardY2, item: promptItems[2] },
-          { x: cardX2, y: cardY2, item: promptItems[3] }
-        ];
+        content.slice(0, 4).forEach(function(line, index) {
+          const pos = positions[index];
 
-        cards.forEach(function (card) {
-          slide.addShape("roundRect", {
-            x: card.x,
-            y: card.y,
-            w: cardW,
-            h: cardH,
-            rectRadius: 0.16,
-            fill: { color: getSelectedMajorPanelFillV148("EAF1F8") },
-            line: { color: getSelectedReadableTextColourV148(), width: 0, transparency: 100 }
-          });
-
-          slide.addShape("roundRect", {
-            x: card.x + 0.22,
-            y: card.y + 0.18,
-            w: 0.42,
-            h: 0.30,
-            rectRadius: 0.07,
-            fill: { color: getSelectedMajorPanelFillV148("EAF1F8") },
-            line: { color: getSelectedReadableTextColourV148(), width: 0, transparency: 100 }
-          });
-
-          slide.addText(card.item.number, {
-            x: card.x + 0.29,
-            y: card.y + 0.24,
-            w: 0.28,
-            h: 0.12,
+          slide.addText(String(index + 1), {
+            x: pos.x,
+            y: pos.y + 0.08,
+            w: 0.30,
+            h: 0.18,
             fontFace: "Aptos",
             fontSize: 11,
             bold: true,
             color: getSelectedReadableTextColourV148(),
-            align: "center",
-            margin: 0,
-            fit: "shrink"
-          });
-
-          slide.addText(card.item.text, {
-            x: card.x + 0.78,
-            y: card.y + 0.18,
-            w: cardW - 1.02,
-            h: cardH - 0.28,
-            fontFace: "Aptos",
-            fontSize: 22,
-            bold: false,
-            color: getSelectedReadableTextColourV148(),
             margin: 0,
             fit: "shrink",
+            align: "center"
+          });
+
+          slide.addText(line, {
+            x: pos.x + 0.42,
+            y: pos.y,
+            w: cardW - 0.55,
+            h: cardH,
+            fontFace: "Aptos",
+            fontSize: 21,
+            bold: false,
+            color: getSelectedReadableTextColourV148(),
+            fit: "shrink",
             valign: "mid",
+            margin: 0.02,
             breakLine: true
           });
         });
-
-        slide.addText("Together, build the answer:", {
-          x: 1.05,
-          y: 4.55,
-          w: isIconsMode() ? 9.55 : 10.9,
-          h: 0.26,
-          fontFace: "Aptos",
-          fontSize: 22,
-          bold: false,
-          color: getSelectedReadableTextColourV148(),
-          margin: 0,
-          fit: "shrink"
+      } else {
+        const richText = content.map(function(line) {
+          return { text: line, options: { bullet: { type: "bullet" }, breakLine: true } };
         });
 
-        slide.addText("King Charles III had symbolic power because ______.", {
-          x: 1.05,
-          y: 4.92,
-          w: isIconsMode() ? 9.55 : 10.9,
-          h: 0.24,
+        slide.addText(richText, {
+          x: isIconsMode() ? 1.08 : 1.18,
+          y: 1.45,
+          w: isIconsMode() ? 9.42 : 10.95,
+          h: 3.72,
           fontFace: "Aptos",
-          fontSize: 22,
+          fontSize: content.length > 6 ? 19 : 23,
           bold: false,
           color: getSelectedReadableTextColourV148(),
-          margin: 0,
-          fit: "shrink"
+          fit: "shrink",
+          valign: "top",
+          paraSpaceAfterPt: 8,
+          margin: 0.02
         });
-
-        slide.addText("Tsar Nicholas II had direct political power because ______.", {
-          x: 1.05,
-          y: 5.25,
-          w: isIconsMode() ? 9.55 : 10.9,
-          h: 0.24,
-          fontFace: "Aptos",
-          fontSize: 22,
-          bold: false,
-          color: getSelectedReadableTextColourV148(),
-          margin: 0,
-          fit: "shrink"
-        });
-
-        slide.addText("The key difference was ______.", {
-          x: 1.05,
-          y: 5.58,
-          w: isIconsMode() ? 9.55 : 10.9,
-          h: 0.24,
-          fontFace: "Aptos",
-          fontSize: 22,
-          bold: false,
-          color: getSelectedReadableTextColourV148(),
-          margin: 0,
-          fit: "shrink"
-        });
-
-        return;
       }
     }
 
 
+    
     function getYouDoKeywordsOnly() {
       try {
         const box = document.getElementById("keyTermsText");
@@ -4079,16 +3856,17 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
       });
 
       slide.addText("Exam style", {
-        x: 1.45,
-        y: 1.79,
-        w: 1.45,
-        h: 0.14,
-        fontFace: themeFont(),
-        fontSize: 10.5,
+        x: isIconsMode() ? 1.05 : 1.15,
+        y: 1.56,
+        w: isIconsMode() ? 9.55 : 10.85,
+        h: 0.34,
+        fontFace: "Aptos",
+        fontSize: 24,
         bold: true,
         color: getSelectedReadableTextColourV148(),
-        align: "center",
-        margin: 0
+        fit: "shrink",
+        margin: 0,
+        align: "left"
       });
 
       slide.addText(questionText, {
@@ -4107,16 +3885,18 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
       });
 
       slide.addText("Show your working or reasoning clearly.", {
-        x: 1.35,
-        y: 4.92,
-        w: isIconsMode() ? 9.0 : 10.3,
-        h: 0.28,
-        fontFace: themeFont(),
-        fontSize: 15,
-        italic: true,
+        x: isIconsMode() ? 1.05 : 1.15,
+        y: 4.95,
+        w: isIconsMode() ? 9.55 : 10.85,
+        h: 0.34,
+        fontFace: "Aptos",
+        fontSize: 24,
+        bold: false,
+        italic: false,
         color: getSelectedReadableTextColourV148(),
         fit: "shrink",
-        margin: 0
+        margin: 0,
+        align: "left"
       });
     }
 
@@ -4439,13 +4219,20 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
 
 
 
+
+    function cleanFinalAnswerTextV159(textValue) {
+      return String(textValue || "")
+        .replace(/^\s*(?:Exit\s+Ticket\s+)?Answer\s*[:\-–]\s*/i, "")
+        .trim();
+    }
+
     function addFinalCheckLayout(slide, lines) {
       const cleanLines = lines
         .map(function (line) { return line.replace(/^[-•*]\s*/, "").trim(); })
         .filter(function (line) { return line.length > 0; });
 
       const answerText = cleanLines.length > 0
-        ? cleanLines.join("\n")
+        ? cleanFinalAnswerTextV159(cleanLines.join("\n"))
         : "Add the final answer here.";
 
       slide.addShape("roundRect", {
@@ -4752,6 +4539,7 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
         if (addIconsModeSenKeyTermsSlides(pptx, section, ((document.getElementById("lessonTitle") && document.getElementById("lessonTitle").value) || "Lesson"))) return;
       }
 log("Adding slide: " + section.title);
+      log("Slide content lines for " + section.title + ": " + (lines ? lines.length : 0));
 
       const slide = pptx.addSlide();
       applySelectedSlideBackgroundV147(slide);

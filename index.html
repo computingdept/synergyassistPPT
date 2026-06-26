@@ -1106,14 +1106,20 @@
         h: 1.62
       });
 
-      slide.addText("Toilets & Reception closed between lessons.\n\nSelf-Check your uniform.\n\nArrive during the Do Now, you are late.", {
+      slide.addText([
+        { text: "Reminders\n", options: { bold: true, breakLine: true } },
+        { text: "Toilets & Reception closed between lessons.\n", options: { breakLine: true } },
+        { text: "Self-Check your uniform.\n", options: { breakLine: true } },
+        { text: "Arrive during the Do Now, you are late.", options: {} }
+      ], {
         x: 1.78,
-        y: 4.82,
-        w: 7.25,
-        h: 1.55,
-        fontFace: "Aptos",
-        fontSize: 20,
+        y: 5.05,
+        w: 5.65,
+        h: 0.95,
+        fontFace: themeFont(),
+        fontSize: 13,
         color: getSelectedReadableTextColourV148(),
+        fit: "shrink",
         valign: "top",
         margin: 0
       });

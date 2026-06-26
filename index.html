@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Synergy Assist PowerPoint Lesson Builder</title>
+  <title>Synergy Assist PowerPoint Lesson Builder v106 SEN Key Terms Split</title>
 
   <style>
     :root {
@@ -3978,6 +3978,18 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
     }
 
 
+
+    function buildExamQuestionRichTextV169(textValue) {
+      const phrases = (typeof getCheckAnswerKeywordPhrasesV168 === "function")
+        ? getCheckAnswerKeywordPhrasesV168()
+        : [];
+      if (typeof buildYellowKeywordRunsV168 === "function") {
+        return buildYellowKeywordRunsV168(String(textValue || ""), phrases);
+      }
+      return [{ text: String(textValue || ""), options: { color: getSelectedReadableTextColourV148() } }];
+    }
+
+
     function addExamQuestionLayout(slide, lines) {
       const cleanLines = lines
         .map(function (line) { return stripMarkReferencesFromLine(line).replace(/^[-•*]\s*/, "").trim(); })
@@ -4031,7 +4043,7 @@ slide.addText(chunkIndex === 0 ? "Key words for today" : "More key words", {
         align: "left"
       });
 
-      slide.addText(questionText, {
+      slide.addText(buildExamQuestionRichTextV169(questionText), {
         x: 1.35,
         y: 2.28,
         w: isIconsMode() ? 9.05 : 10.35,
